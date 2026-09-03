@@ -1,0 +1,21 @@
+id,name,min_load,max_load,min_split_load,max_dealers,vdc_location,is_active
+47,Blacks 75 Trailer,2,9,7,3,LONG BEACH,TRUE
+48,Red 80 Trailer,2,9,7,2,BENICIA,TRUE
+49,Red 80 Trailer,2,9,7,2,MIRA LOMA,TRUE
+50,Red 80 Trailer,7,9,,2,PORTLAND,TRUE
+51,Red 80 Trailer,,,,2,ORILLIA,TRUE
+52,Red 80 Trailer,7,9,7,2,OMESA,TRUE
+53,9 car hauler 2019 Freightliner,2,9,7,2,MIRA LOMA,TRUE
+54,9 car hauler 2019 Freightliner,,,,2,ORILLIA,TRUE
+55,9 car hauler 2019 Freightliner,7,9,2,1,PORTLAND,TRUE
+56,9 car hauler 2019 Freightliner,7,9,7,2,OMESA,TRUE
+57,9 car hauler 2019 Freightliner,,,,2,MIRA LOMA,TRUE
+58,9 car hauler 2019 Freightliner,,,,2,LONG BEACH,TRUE
+59,xyz,,,,2,LONG BEACH,TRUE
+60,vbb,8,8,,2,LONG BEACH,TRUE
+61,a,1,1,,2,MIRA LOMA,TRUE
+62,Hauler1,2,9,,2,LONG BEACH,TRUE
+63,Test_70_capacity,2,7,4,2,LONG BEACH,TRUE
+64,10 car hauler,2,10,7,2,BENICIA,TRUE
+68,Test,2,11,8,3,PORTLAND,TRUE
+75,Test_9,2,9,7,3,LONG BEACH,TRUE

@@ -1,0 +1,24 @@
+dealer_id,name,vdc_served,city,lat,lon,service_time_mins,earliest_arrival,latest_arrival,is_handover_allowed
+D_LA_01,Toyota of Anaheim,LA,"Anaheim, CA",33.8366,-117.9143,35,420,1140,1
+D_LA_02,Lexus of Glendale,LA,"Glendale, CA",34.1425,-118.2551,40,480,1080,1
+D_LA_03,Toyota of San Diego,LA,"San Diego, CA",32.8126,-117.1517,45,420,1200,1
+D_LA_04,Toyota of Bakersfield (Long-Haul),LA,"Bakersfield, CA",35.3733,-119.0187,50,540,1260,1
+D_LA_05,Fresno Lexus Hub (Extended Long-Haul),LA,"Fresno, CA",36.7468,-119.7726,45,600,1320,1
+D_LA_06,Toyota of Riverside,LA,"Riverside, CA",33.9533,-117.3962,35,420,1140,0
+D_SF_01,Stevens Creek Toyota,SF,"San Jose, CA",37.323,-121.9863,45,450,1140,1
+D_SF_02,Toyota of Walnut Creek,SF,"Walnut Creek, CA",37.9101,-122.0652,35,420,1080,1
+D_SF_03,Sacramento Toyota Hub,SF,"Sacramento, CA",38.5816,-121.4944,40,480,1200,1
+D_SF_04,Reno Lexus Superstore (Long-Haul),SF,"Reno, NV",39.5296,-119.8138,50,540,1320,1
+D_ML_01,Crown Toyota Ontario,ML,"Ontario, CA",34.0689,-117.5645,30,420,1100,1
+D_ML_02,Toyota of San Bernardino,ML,"San Bernardino, CA",34.1083,-117.2898,35,450,1140,1
+D_ML_03,Palm Springs Lexus,ML,"Cathedral City, CA",33.7797,-116.4653,40,480,1200,1
+D_ML_04,Las Vegas Toyota Hub (Long-Haul),ML,"Las Vegas, NV",36.1699,-115.1398,55,600,1380,1
+D_PT_01,Beaverton Toyota,PT,"Beaverton, OR",45.4871,-122.8037,35,450,1140,1
+D_PT_02,Gresham Toyota,PT,"Gresham, OR",45.4998,-122.4312,35,420,1100,1
+D_PT_03,Toyota of Olympia,PT,"Tumwater, WA",46.9942,-122.9056,40,480,1200,1
+D_PT_04,Seattle Toyota Metro (Long-Haul),PT,"Seattle, WA",47.6062,-122.3321,50,540,1300,1
+D_PT_05,Spokane Lexus Regional Hub,PT,"Spokane, WA",47.6588,-117.426,60,660,1400,1
+D_SK_01,Barrie Toyota Centre,SK,"Barrie, ON",44.3894,-79.6903,35,420,1140,1
+D_SK_02,Newmarket Lexus,SK,"Newmarket, ON",44.0592,-79.4613,40,450,1140,1
+D_OM_01,Mesa Gateway Toyota,04016,"Mesa, AZ",33.4152,-111.8315,35,420,1140,1
+D_OM_02,Scottsdale Lexus Hub,04016,"Scottsdale, AZ",33.4942,-111.9261,40,450,1140,1

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hauler Route & Driver Schedule Optimizer (CP-SAT)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#082f49',
+            },
+            toyota: '#eb0a1e'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-slate-950/80 border-b border-slate-800 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
+        <i class="fa-solid fa-truck-ramp-box text-lg"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2.5">
+          <h1 class="font-bold text-lg text-white tracking-tight">AutoHauler Dispatch Optimizer</h1>
+          <span class="px-2 py-0.5 text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-full">CP-SAT v9.15</span>
+          <span class="px-2 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">11-Hour Rule Engine</span>
+        </div>
+        <p class="text-xs text-slate-400">Multi-Stop Factory &rarr; Dealer &rarr; Factory Route & Driver Schedule Optimization by Load ID</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3 text-xs">
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg px-3 py-1.5 flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-300 font-medium">Solver: OR-Tools Active</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg px-3 py-1.5 flex items-center space-x-2">
+        <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
+        <span class="text-slate-300">Max Duty: 11.0h FMCSA</span>
+      </div>
+      <a href="#complianceModal" onclick="showFormulationModal()" class="bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 rounded-lg px-3 py-1.5 font-medium transition flex items-center space-x-1.5">
+        <i class="fa-solid fa-file-pdf"></i>
+        <span>OR Formulation</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- Left Sidebar: Load Explorer -->
+    <aside class="w-96 border-r border-slate-800 bg-slate-950 flex flex-col shrink-0">
+      
+      <!-- Filter controls -->
+      <div class="p-4 border-b border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-boxes-stacked text-sky-400 text-sm"></i>
+            <h2 class="font-semibold text-sm text-slate-200">Load Inventory</h2>
+          </div>
+          <span id="loadCountBadge" class="text-xs px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full font-mono">28 loads</span>
+        </div>
+
+        <!-- Search Input -->
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+          <input id="loadSearchInput" type="text" placeholder="Search load ID, number, status..." 
+                 class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
+        </div>
+
+        <!-- Origin VDC Pills -->
+        <div>
+          <label class="text-[11px] font-medium text-slate-400 block mb-1.5">Origin VDC / Plant</label>
+          <div class="flex flex-wrap gap-1" id="vdcPillContainer">
+            <button class="vdc-pill active px-2 py-1 text-[11px] rounded bg-sky-600 text-white font-medium" data-origin="ALL">ALL</button>
+            <button class="vdc-pill px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium" data-origin="LA">LA (Long Beach)</button>
+            <button class="vdc-pill px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium" data-origin="SF">SF (Benicia)</button>
+            <button class="vdc-pill px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium" data-origin="ML">ML (Mira Loma)</button>
+            <button class="vdc-pill px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium" data-origin="PT">PT (Portland)</button>
+            <button class="vdc-pill px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium" data-origin="SK">SK (Orillia)</button>
+            <button class="vdc-pill px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium" data-origin="04016">04016 (Omesa)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Load Card List -->
+      <div id="loadCardList" class="flex-1 overflow-y-auto p-3 space-y-2 divide-y divide-slate-800/40">
+        <!-- Injected via JavaScript -->
+        <div class="text-center py-10 text-slate-500 text-xs">
+          <i class="fa-solid fa-spinner fa-spin text-lg mb-2"></i>
+          <p>Loading loads from loads_tbl.csv...</p>
+        </div>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="p-3 border-t border-slate-800 bg-slate-950/60 text-[11px] text-slate-400 flex items-center justify-between">
+        <span>Connected to CSV Repository</span>
+        <span class="text-emerald-400 flex items-center space-x-1">
+          <i class="fa-solid fa-circle text-[8px]"></i>
+          <span>Live Local</span>
+        </span>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-y-auto bg-slate-900/60">
+
+      <!-- Top Load Banner & Optimization Trigger Toolbar -->
+      <div class="bg-slate-950/60 border-b border-slate-800 p-6">
+        
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <!-- Active Load Details -->
+          <div>
+            <div class="flex items-center space-x-3 mb-1">
+              <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30" id="bannerLoadId">Load #244606</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300" id="bannerLoadNum">L-44166</span>
+              <span class="text-xs px-2 py-0.5 rounded-full uppercase font-semibold" id="bannerStatusBadge">Locked</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20" id="bannerVdcName">LONG BEACH VDC (LA)</span>
+            </div>
+            <h2 class="text-xl font-bold text-white tracking-tight flex items-center space-x-2">
+              <span id="bannerTitle">Dispatch Schedule & Driver Roster Optimization</span>
+            </h2>
+            <div class="flex items-center space-x-4 mt-2 text-xs text-slate-400">
+              <span class="flex items-center space-x-1.5">
+                <i class="fa-solid fa-truck text-slate-500"></i>
+                <span class="text-slate-300" id="bannerHaulerName">Test_9 (9 Car Capacity)</span>
+              </span>
+              <span>&bull;</span>
+              <span class="flex items-center space-x-1.5">
+                <i class="fa-solid fa-car-side text-slate-500"></i>
+                <span class="text-slate-300" id="bannerCargoStats">8 Vehicles Onboard</span>
+              </span>
+              <span>&bull;</span>
+              <span class="flex items-center space-x-1.5">
+                <i class="fa-solid fa-location-dot text-slate-500"></i>
+                <span class="text-slate-300" id="bannerDealersCount">2 Destination Dealerships</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Optimization Action & Parameters -->
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex items-center space-x-3 text-xs">
+              <div>
+                <label class="block text-[10px] text-slate-400 font-medium uppercase mb-0.5">Start Time</label>
+                <input id="tripStartTimeInput" type="time" value="07:00" 
+                       class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs font-mono focus:outline-none focus:border-sky-500">
+              </div>
+              <div class="h-8 w-[1px] bg-slate-800"></div>
+              <div>
+                <label class="block text-[10px] text-slate-400 font-medium uppercase mb-0.5">Duty Limit (Hmax)</label>
+                <div class="flex items-center space-x-1">
+                  <input id="maxDutyHoursInput" type="number" step="0.5" min="4" max="16" value="11.0" 
+                         class="w-16 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs font-mono focus:outline-none focus:border-sky-500">
+                  <span class="text-slate-400 text-[11px]">hrs</span>
+                </div>
+              </div>
+              <div class="h-8 w-[1px] bg-slate-800"></div>
+              <div>
+                <label class="block text-[10px] text-slate-400 font-medium uppercase mb-0.5">Handover Buffer</label>
+                <div class="flex items-center space-x-1">
+                  <input id="handoverBufferInput" type="number" step="5" min="15" max="120" value="45" 
+                         class="w-14 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs font-mono focus:outline-none focus:border-sky-500">
+                  <span class="text-slate-400 text-[11px]">min</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Big Solve Button -->
+            <button id="btnSolveSchedule" onclick="triggerSolve()" 
+                    class="px-5 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold text-xs tracking-wide shadow-lg shadow-sky-600/30 flex items-center space-x-2 transition transform active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-bolt text-amber-300"></i>
+              <span>SOLVE SCHEDULE (CP-SAT)</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Main Results & Tabs Content -->
+      <div class="p-6 space-y-6 flex-1">
+
+        <!-- Solution KPI Summary Grid -->
+        <div id="solutionKpiContainer" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Status</div>
+            <div class="flex items-center space-x-2">
+              <span id="kpiStatusBadge" class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">OPTIMAL</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1" id="kpiSolveTime">Solve: 18 ms</div>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Trip Duration</div>
+            <div class="text-lg font-bold font-mono text-white" id="kpiDuration">14h 25m</div>
+            <div class="text-[10px] text-slate-400 mt-1" id="kpiDrivingTime">Driving: 11.9h</div>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Total Distance</div>
+            <div class="text-lg font-bold font-mono text-white" id="kpiDistance">598.5 mi</div>
+            <div class="text-[10px] text-slate-400 mt-1">Closed circuit loop</div>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Drivers Needed</div>
+            <div class="text-lg font-bold font-mono text-sky-400" id="kpiDriversCount">2 Drivers</div>
+            <div class="text-[10px] text-slate-400 mt-1" id="kpi11hCompliance">All &le; 11.0h limit</div>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Handover Point</div>
+            <div class="text-sm font-semibold text-amber-300 truncate" id="kpiHandoverLoc">Fresno Hub (D_LA_05)</div>
+            <div class="text-[10px] text-slate-400 mt-1" id="kpiHandoverDuration">45 min buffer</div>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Capacity Load</div>
+            <div class="text-lg font-bold font-mono text-white" id="kpiCapacity">8 / 9 Cars</div>
+            <div class="text-[10px] text-emerald-400 mt-1" id="kpiCargoWeight">19,450 kg</div>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Estimated Cost</div>
+            <div class="text-lg font-bold font-mono text-emerald-400" id="kpiTotalCost">$1,784.50</div>
+            <div class="text-[10px] text-slate-400 mt-1">Hauler + Wages</div>
+          </div>
+
+        </div>
+
+        <!-- Driver 11-Hour Duty Compliance Monitor -->
+        <div id="driverCompliancePanel" class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-id-card-clip text-sky-400 text-sm"></i>
+              <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-200">11-Hour Driver Duty & Handover Enforcement (Section 10 & 11)</h3>
+            </div>
+            <span class="text-xs text-slate-400">Statutory Limit: 660 mins (11.0 hours) per driver</span>
+          </div>
+
+          <div id="driverProgressBars" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Tabbed Navigation for Views -->
+        <div class="border-b border-slate-800 flex items-center justify-between">
+          <div class="flex space-x-2" id="tabButtons">
+            <button class="tab-btn active px-4 py-2 text-xs font-semibold rounded-t-lg border-b-2 border-sky-500 text-sky-400 bg-slate-800/40" onclick="switchTab('itineraryTab')">
+              <i class="fa-solid fa-table-list mr-1.5"></i> Leg-by-Leg Schedule
+            </button>
+            <button class="tab-btn px-4 py-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200" onclick="switchTab('timelineTab')">
+              <i class="fa-solid fa-chart-gantt mr-1.5"></i> Driver & Hauler Timeline
+            </button>
+            <button class="tab-btn px-4 py-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200" onclick="switchTab('circuitTab')">
+              <i class="fa-solid fa-route mr-1.5"></i> Stop Circuit & Handover Diagram
+            </button>
+            <button class="tab-btn px-4 py-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200" onclick="switchTab('cargoTab')">
+              <i class="fa-solid fa-car mr-1.5"></i> Cargo Manifest (VIN & Models)
+            </button>
+          </div>
+
+          <!-- Export Actions -->
+          <div class="flex items-center space-x-2 pb-1">
+            <button onclick="exportCSV()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded border border-slate-700 transition flex items-center space-x-1">
+              <i class="fa-solid fa-file-csv text-emerald-400"></i>
+              <span>Export CSV</span>
+            </button>
+            <button onclick="exportJSON()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded border border-slate-700 transition flex items-center space-x-1">
+              <i class="fa-solid fa-code text-sky-400"></i>
+              <span>JSON</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab 1: Itinerary Table -->
+        <div id="itineraryTab" class="tab-content">
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-3 w-12 text-center">Leg</th>
+                    <th class="py-3 px-4">Origin &rarr; Destination</th>
+                    <th class="py-3 px-3 text-right">Distance</th>
+                    <th class="py-3 px-3 text-right">Driving Time</th>
+                    <th class="py-3 px-3 text-center">Dep. (Origin)</th>
+                    <th class="py-3 px-3 text-center">Arr. (Dest)</th>
+                    <th class="py-3 px-3 text-center">Service / Unload</th>
+                    <th class="py-3 px-3 text-center">Dep. (Dest)</th>
+                    <th class="py-3 px-4">Active Driver</th>
+                    <th class="py-3 px-3 text-center">Handover</th>
+                    <th class="py-3 px-3 text-center">Onboard</th>
+                  </tr>
+                </thead>
+                <tbody id="itineraryTableBody" class="divide-y divide-slate-800/60 font-mono text-slate-200">
+                  <!-- Injected via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Timeline / Gantt Chart -->
+        <div id="timelineTab" class="tab-content hidden space-y-4">
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5">
+            <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300 mb-4 flex items-center space-x-2">
+              <i class="fa-solid fa-timeline text-sky-400"></i>
+              <span>Multi-Driver Handover & Hauler Movement Timeline</span>
+            </h3>
+            <div id="ganttChartContainer" class="space-y-4">
+              <!-- Visual bars dynamically generated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Route Circuit Diagram -->
+        <div id="circuitTab" class="tab-content hidden space-y-4">
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-6">
+            <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300 mb-6 flex items-center space-x-2">
+              <i class="fa-solid fa-circle-nodes text-sky-400"></i>
+              <span>Optimized Factory &rarr; Delivery Centre &rarr; Factory Circuit Sequence</span>
+            </h3>
+            
+            <div id="circuitFlowNodes" class="flex flex-col md:flex-row items-center justify-between gap-4 py-6 px-4 bg-slate-900/50 rounded-xl border border-slate-800/80">
+              <!-- Flow sequence injected here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Cargo Manifest Table -->
+        <div id="cargoTab" class="tab-content hidden">
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+              <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300">Vehicle Cargo Manifest for Current Load</h3>
+              <span class="text-xs text-slate-400 font-mono" id="cargoTotalUnitsWeight">8 Units &bull; Total Weight: 19,450 kg</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th class="py-2.5 px-3">#</th>
+                    <th class="py-2.5 px-3">VIN</th>
+                    <th class="py-2.5 px-4">Model Description</th>
+                    <th class="py-2.5 px-3">Brand / Series</th>
+                    <th class="py-2.5 px-3 text-right">Weight (kg)</th>
+                    <th class="py-2.5 px-3 text-center">Dimensions (L x W x H)</th>
+                    <th class="py-2.5 px-4">Destination Dealer</th>
+                  </tr>
+                </thead>
+                <tbody id="cargoTableBody" class="divide-y divide-slate-800 font-mono text-slate-300">
+                  <!-- Injected via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Modal: Complete OR Formulation Reference -->
+  <div id="formulationModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-book"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-white">Complete OR Formulation Reference</h3>
+            <p class="text-[11px] text-slate-400">Complete_OR_formulation_hauler_route_optimization.pdf implementation verification</p>
+          </div>
+        </div>
+        <button onclick="hideFormulationModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
+            <div class="font-semibold text-sky-400 mb-1">Primary Variables</div>
+            <p><span class="font-mono text-amber-300">y_ijk &isin; {0,1}</span>: Hauler movement arc.</p>
+            <p><span class="font-mono text-amber-300">x_ijkl &isin; {0,1}</span>: Driver assignment to movement.</p>
+          </div>
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
+            <div class="font-semibold text-sky-400 mb-1">Driver 11-Hour Limit (10.1)</div>
+            <p class="font-mono text-emerald-300">&sum; T_duty_ijk &middot; x_ijkl &le; 11 hours (660 mins)</p>
+            <p class="text-[11px] text-slate-400 mt-1">Multi-driver handover activated when trip exceeds 11h.</p>
+          </div>
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
+            <div class="font-semibold text-sky-400 mb-1">Driver Handover (11.1 - 11.3)</div>
+            <p class="font-mono text-amber-300">Handover_k &le; h_k</p>
+            <p class="text-[11px] text-slate-400 mt-1">Start_next &ge; End_previous + HandoverTime_k (45 min buffer inserted).</p>
+          </div>
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
+            <div class="font-semibold text-sky-400 mb-1">Subtour Elimination & Continuity</div>
+            <p class="font-mono text-sky-300">u_id - u_ik + |D| &middot; y_idk &le; |D| - 1</p>
+            <p class="text-[11px] text-slate-400 mt-1">Prevents disconnected cycles; enforces single closed loop.</p>
+          </div>
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
+            <div class="font-semibold text-sky-400 mb-1">Same Factory Return (6.4)</div>
+            <p class="font-mono text-purple-300">&sum;k y_ifk = a_if; &sum;j y_ijf = a_if</p>
+            <p class="text-[11px] text-slate-400 mt-1">Hauler starts and returns to the identical origin VDC.</p>
+          </div>
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
+            <div class="font-semibold text-sky-400 mb-1">Max Dealers (12.2) & Capacity (8.1)</div>
+            <p class="font-mono text-pink-300">&sum; v_id &le; max_dealers (2 to 3)</p>
+            <p class="text-[11px] text-slate-400 mt-1">Enforces dealer combo constraints and hauler vehicle capacity.</p>
+          </div>
+        </div>
+      </div>
+      <div class="p-4 border-t border-slate-800 bg-slate-950/60 flex justify-end">
+        <button onclick="hideFormulationModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

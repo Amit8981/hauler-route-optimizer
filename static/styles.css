@@ -1,0 +1,59 @@
+/* Custom Styles for Hauler Route & Schedule Optimizer */
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Pulse animation for active badges */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.pulse-badge {
+  animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+/* Card active state */
+.load-card.active {
+  border-color: #0284c7 !important;
+  background-color: rgba(2, 132, 199, 0.12) !important;
+  box-shadow: 0 0 15px -3px rgba(2, 132, 199, 0.25);
+}
+
+/* Circuit Flow Animation */
+.flow-arrow {
+  position: relative;
+}
+.flow-arrow::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #0284c7, #6366f1);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+/* Gantt Bar Hover */
+.gantt-bar {
+  transition: all 0.2s ease;
+}
+.gantt-bar:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}

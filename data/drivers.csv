@@ -1,0 +1,10 @@
+driver_id,name,home_vdc,duty_limit_mins,shift_start,shift_end,cost_per_hr,certified_haulers,is_available
+DRV_01,Vijay Anna,LA,660,360,1380,35.0,all,True
+DRV_02,LB746 (Carlos M.),LA,660,360,1380,32.0,all,True
+DRV_03,BE14 (David K.),SF,660,360,1380,34.0,all,True
+DRV_04,BE25 (Sarah T.),SF,660,360,1380,35.0,all,True
+DRV_05,LB764 (Robert R.),LA,660,420,1440,33.0,all,True
+DRV_06,Srikanth Al,PT,660,360,1380,36.0,all,True
+DRV_07,Ravi Sushil,ML,660,360,1380,33.0,all,True
+DRV_08,Relief Driver West (Relief 1),LA,660,480,1440,38.0,all,True
+DRV_09,Relief Driver North (Relief 2),PT,660,480,1440,38.0,all,True
