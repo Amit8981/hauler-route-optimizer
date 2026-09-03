@@ -1,9 +1,11 @@
 # 🚛 AutoHauler Route & Driver Schedule Optimization System
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success?style=for-the-badge&logo=github)](https://amit8981.github.io/hauler-route-optimizer/)
 [![OR-Tools](https://img.shields.io/badge/OR--Tools-CP--SAT%20v9.15-blue.svg)](https://developers.google.com/optimization)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Framework-Flask%203.1-emerald.svg)](https://flask.palletsprojects.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> 🚀 **Live Interactive Web UI**: **[https://amit8981.github.io/hauler-route-optimizer/](https://amit8981.github.io/hauler-route-optimizer/)**
 
 An enterprise-grade Operations Research solution for **Finished Vehicle Logistics (Auto-Hauling)**, solving multi-stop Factory $\to$ Dealership $\to$ Factory routing with hauler continuity, driver assignment, **11-hour driver limits**, and **multi-driver handover mechanics** using **Google OR-Tools CP-SAT**.
 
