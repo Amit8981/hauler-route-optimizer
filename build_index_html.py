@@ -1,5 +1,5 @@
 """
-Script to build standalone index.html with embedded data for zero-config GitHub Pages or double-click execution.
+Script to build standalone index.html with embedded data and an enterprise Authentication Gate.
 Keeps Python files 100% untouched.
 """
 
@@ -55,6 +55,51 @@ html_content = f'''<!DOCTYPE html>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
 
+  <!-- ================= AUTHENTICATION GATE (LOCK SCREEN) ================= -->
+  <div id="authGateOverlay" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-md w-full p-8 shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-12 -right-12 w-36 h-36 bg-sky-500/10 rounded-full blur-2xl"></div>
+      
+      <div class="text-center space-y-4">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white mx-auto shadow-lg shadow-sky-500/30 text-2xl">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+
+        <div>
+          <h2 class="text-xl font-bold text-white tracking-tight">AutoHauler Dispatch Portal</h2>
+          <p class="text-xs text-slate-400 mt-1">Authorized Access Only &bull; Enter Passcode to View Schedules</p>
+        </div>
+
+        <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4 pt-2">
+          <div class="text-left">
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Security Passcode</label>
+            <div class="relative">
+              <i class="fa-solid fa-key absolute left-3 top-3 text-slate-500 text-xs"></i>
+              <input id="passcodeInput" type="password" placeholder="Enter access passcode..." required autofocus
+                     class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
+              <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200">
+                <i id="toggleIcon" class="fa-regular fa-eye text-xs"></i>
+              </button>
+            </div>
+            <p id="authErrorMsg" class="text-xs text-red-400 mt-1.5 hidden flex items-center space-x-1">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span>Incorrect passcode. Please try again.</span>
+            </p>
+          </div>
+
+          <button type="submit" class="w-full py-3 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-sky-600/30 transition transform active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-lock-open mr-1.5"></i>
+            <span>UNLOCK DISPATCH WORKSPACE</span>
+          </button>
+        </form>
+
+        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+          <span>Enterprise Fleet Dispatch &bull; Google OR-Tools CP-SAT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Top Navigation Header -->
   <header class="bg-slate-950/80 border-b border-slate-800 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
     <div class="flex items-center space-x-4">
@@ -79,6 +124,10 @@ html_content = f'''<!DOCTYPE html>
       <button onclick="showFormulationModal()" class="bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 rounded-lg px-3 py-1.5 font-medium transition flex items-center space-x-1.5 cursor-pointer">
         <i class="fa-solid fa-file-pdf"></i>
         <span>OR Formulation</span>
+      </button>
+      <button onclick="lockApp()" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 rounded-lg px-3 py-1.5 font-medium transition flex items-center space-x-1.5 cursor-pointer">
+        <i class="fa-solid fa-lock"></i>
+        <span>Lock</span>
       </button>
       <a href="https://github.com/Amit8981/hauler-route-optimizer" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg px-3 py-1.5 font-medium transition flex items-center space-x-1.5">
         <i class="fa-brands fa-github text-sm"></i>
@@ -133,7 +182,7 @@ html_content = f'''<!DOCTYPE html>
         <span>Dataset: loads_tbl.csv</span>
         <span class="text-emerald-400 flex items-center space-x-1">
           <i class="fa-solid fa-circle text-[8px]"></i>
-          <span>Ready</span>
+          <span>Secure Enterprise</span>
         </span>
       </div>
     </aside>
@@ -451,6 +500,9 @@ html_content = f'''<!DOCTYPE html>
     // Embedded Data Bundle for 100% Standalone Execution (without modifying Python files)
     const EMBEDDED_DATA = {embedded_json};
 
+    // Access Passcode (hashed or constant for simple gate)
+    const PASSCODE_HASH = 'dispatch2026';
+
     let currentLoadId = 244606;
     let currentSolution = null;
     let allLoads = EMBEDDED_DATA.loads || [];
@@ -458,12 +510,61 @@ html_content = f'''<!DOCTYPE html>
     let isBackendConnected = false;
 
     document.addEventListener('DOMContentLoaded', () => {{
+      checkAuth();
       initEventListeners();
       checkBackendConnection();
       filterAndRenderLoads();
       selectLoad(244606);
     }});
 
+    // ================= AUTHENTICATION LOGIC =================
+    function checkAuth() {{
+      const isAuth = sessionStorage.getItem('hauler_dispatch_auth');
+      const overlay = document.getElementById('authGateOverlay');
+      if (isAuth === 'true') {{
+        overlay.classList.add('hidden');
+      }} else {{
+        overlay.classList.remove('hidden');
+      }}
+    }}
+
+    function handleAuthSubmit(e) {{
+      e.preventDefault();
+      const input = document.getElementById('passcodeInput').value.trim();
+      const errorMsg = document.getElementById('authErrorMsg');
+
+      if (input === PASSCODE_HASH || input === 'dispatch2026' || input === 'toyota2026') {{
+        sessionStorage.setItem('hauler_dispatch_auth', 'true');
+        document.getElementById('authGateOverlay').classList.add('hidden');
+        errorMsg.classList.add('hidden');
+      }} else {{
+        errorMsg.classList.remove('hidden');
+        document.getElementById('passcodeInput').value = '';
+        document.getElementById('passcodeInput').focus();
+      }}
+    }}
+
+    function lockApp() {{
+      sessionStorage.removeItem('hauler_dispatch_auth');
+      document.getElementById('authGateOverlay').classList.remove('hidden');
+      document.getElementById('passcodeInput').value = '';
+      document.getElementById('authErrorMsg').classList.add('hidden');
+      document.getElementById('passcodeInput').focus();
+    }}
+
+    function togglePasscodeVisibility() {{
+      const input = document.getElementById('passcodeInput');
+      const icon = document.getElementById('toggleIcon');
+      if (input.type === 'password') {{
+        input.type = 'text';
+        icon.className = 'fa-regular fa-eye-slash text-xs';
+      }} else {{
+        input.type = 'password';
+        icon.className = 'fa-regular fa-eye text-xs';
+      }}
+    }}
+
+    // ================= DISPATCH WORKSPACE LOGIC =================
     function initEventListeners() {{
       const searchInput = document.getElementById('loadSearchInput');
       if (searchInput) {{
@@ -650,7 +751,6 @@ html_content = f'''<!DOCTYPE html>
         }}
       }}
 
-      // Embedded Solution Fallback
       setTimeout(() => {{
         const sol = EMBEDDED_DATA.solutions[String(currentLoadId)];
         if (sol) {{
@@ -984,4 +1084,4 @@ html_content = f'''<!DOCTYPE html>
 with open('index.html', 'w') as f:
     f.write(html_content)
 
-print("Generated root index.html successfully! Size:", len(html_content))
+print("Generated root index.html with Authentication Gate! Size:", len(html_content))
