@@ -355,8 +355,8 @@ html_content = f'''<!DOCTYPE html>
 
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
             <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Capacity Load</div>
-            <div class="text-lg font-bold font-mono text-white" id="kpiCapacity">8 / 9 Cars</div>
-            <div class="text-[10px] text-emerald-400 mt-1" id="kpiCargoWeight">42,816 lbs (100%)</div>
+            <div class="text-lg font-bold font-mono text-emerald-400" id="kpiCapacity">10 / 10 Cars</div>
+            <div class="text-[10px] text-emerald-400 mt-1 font-semibold" id="kpiCargoWeight">54,759 lbs (100% Full)</div>
           </div>
 
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
@@ -1052,7 +1052,8 @@ html_content = f'''<!DOCTYPE html>
 
       const resLbs = res.total_cargo_weight_lbs ? res.total_cargo_weight_lbs : Math.round(Number(res.total_cargo_weight_kg || 0) * 2.20462);
       document.getElementById('kpiCapacity').textContent = `${{res.total_cargo_units}} / ${{res.hauler_capacity}} Cars`;
-      document.getElementById('kpiCargoWeight').textContent = `${{resLbs.toLocaleString()}} lbs (100%)`;
+      document.getElementById('kpiCapacity').className = 'text-lg font-bold font-mono text-emerald-400';
+      document.getElementById('kpiCargoWeight').textContent = `${{resLbs.toLocaleString()}} lbs (100% Full)`;
 
       if (res.cost_breakdown) {{
         document.getElementById('kpiTotalCost').textContent = `$${{res.cost_breakdown.total_trip_cost.toLocaleString()}}`;

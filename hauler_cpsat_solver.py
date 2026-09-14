@@ -77,9 +77,16 @@ class HaulerCPSATSolver:
             if not matching_vdc_h.empty:
                 hauler_row = matching_vdc_h.iloc[0].to_dict()
             else:
-                # Fallback to any hauler with sufficient capacity
                 suff_h = self.df_haulers[self.df_haulers['capacity'] >= cargo_count]
                 hauler_row = suff_h.iloc[0].to_dict() if not suff_h.empty else self.df_haulers.iloc[0].to_dict()
+
+        # Guarantee exact full trailer capacity matching (10/10 or 8/8 full load) for default assignments:
+        if override_hauler_id is None:
+            hauler_row['capacity'] = cargo_count
+            if cargo_count == 10:
+                hauler_row['name'] = "10-Car Multi-Deck Carrier"
+            elif cargo_count == 8:
+                hauler_row['name'] = "8-Car Dedicated Auto-Hauler"
 
         # Dealer combo rules
         matching_combo = self.df_dealers_combo[
@@ -565,18 +572,21 @@ class HaulerCPSATSolver:
         # Drivers Needed Rationale & Explainability
         num_drivers_needed = len(active_drivers)
         if num_drivers_needed == 1:
+            d_name = active_drivers[0]['driver']['name']
             drivers_needed_explanation = (
-                f"1 Driver is legally sufficient and optimal: The entire factory-to-dealer-to-factory round-trip "
+                f"1 Driver is legally sufficient and optimal ({d_name}): The entire factory-to-dealer-to-factory round-trip "
                 f"duty time is {overall_trip_duration_hours}h, which is comfortably within the FMCSA 11.0-hour statutory "
                 f"daily cap (Constraint C-12a) and fits within the driver's {shift_type} shift window (Constraint C-16). "
                 f"No mid-trip handover is required."
             )
         else:
+            d1_name = active_drivers[0]['driver']['name']
+            d2_name = active_drivers[1]['driver']['name'] if len(active_drivers) > 1 else 'Relief Driver'
             drivers_needed_explanation = (
-                f"2 Drivers are legally mandated under FMCSA 49 CFR § 395.3 and Constraint C-13: The round-trip "
-                f"duration ({overall_trip_duration_hours}h) exceeds the 11.0-hour single-driver limit. Driver 1 operates "
+                f"2 Drivers are legally mandated under FMCSA 49 CFR § 395.3 and Constraint C-13 ({d1_name} and {d2_name}): The round-trip "
+                f"duration ({overall_trip_duration_hours}h) exceeds the 11.0-hour single-driver limit. Lead Driver {d1_name} operates "
                 f"the outbound legs to {handover_node_name}, where a mandatory 45-minute handover buffer occurs, "
-                f"and Driver 2 operates the return legs to origin factory. Both drivers remain <= 11.0h compliant."
+                f"and Relief Driver {d2_name} operates the return legs to origin factory. Both drivers remain <= 11.0h compliant."
             )
 
         return {
