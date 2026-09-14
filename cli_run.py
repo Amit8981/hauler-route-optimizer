@@ -51,7 +51,7 @@ def print_solution_terminal(res):
     print("=" * 90)
     print(f" Origin Terminal    : {res['origin_vdc']} ({res['origin_vdc_name']})")
     print(f" Assigned Hauler    : {res['assigned_hauler_name']} (Capacity: {res['hauler_capacity']} cars)")
-    print(f" Cargo Onboard      : {res['total_cargo_units']} vehicles ({res['total_cargo_weight_kg']:,.1f} kg)")
+    print(f" Cargo Onboard      : {res['total_cargo_units']} vehicles ({res.get('total_cargo_weight_lbs', 0):,} lbs)")
     print(f" Solver Status      : {res['status']} (Solved in {res['solve_time_sec']*1000:.1f} ms)")
     print(f" Total Distance     : {res['total_distance_miles']} miles")
     print(f" Total Driving Time : {res['total_travel_time_hours']} hours ({res['total_travel_time_mins']} mins)")

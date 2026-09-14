@@ -316,7 +316,7 @@ html_content = f'''<!DOCTYPE html>
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
             <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Capacity Load</div>
             <div class="text-lg font-bold font-mono text-white" id="kpiCapacity">8 / 9 Cars</div>
-            <div class="text-[10px] text-emerald-400 mt-1" id="kpiCargoWeight">19,421 kg (C-10)</div>
+            <div class="text-[10px] text-emerald-400 mt-1" id="kpiCargoWeight">42,816 lbs (C-10)</div>
           </div>
 
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
@@ -452,7 +452,7 @@ html_content = f'''<!DOCTYPE html>
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden">
             <div class="p-4 border-b border-slate-800 flex items-center justify-between">
               <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300">Vehicle Cargo Manifest for Current Load</h3>
-              <span class="text-xs text-slate-400 font-mono" id="cargoTotalUnitsWeight">8 Units &bull; Total Weight: 19,421 kg</span>
+              <span class="text-xs text-slate-400 font-mono" id="cargoTotalUnitsWeight">8 Units &bull; Total Weight: 42,816 lbs</span>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs">
@@ -462,7 +462,7 @@ html_content = f'''<!DOCTYPE html>
                     <th class="py-2.5 px-3">VIN</th>
                     <th class="py-2.5 px-4">Model Description</th>
                     <th class="py-2.5 px-3">Brand / Series</th>
-                    <th class="py-2.5 px-3 text-right">Weight (kg)</th>
+                    <th class="py-2.5 px-3 text-right">Weight (lb)</th>
                     <th class="py-2.5 px-3 text-center">Dimensions (L x W x H)</th>
                     <th class="py-2.5 px-4">Destination Dealer</th>
                   </tr>
@@ -838,27 +838,31 @@ html_content = f'''<!DOCTYPE html>
          info.load_status === 'sent' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
          'bg-slate-800 text-slate-300');
 
+      const totalLbs = info.total_weight_lbs ? info.total_weight_lbs : Math.round(Number(info.total_weight_kg || 0) * 2.20462);
       document.getElementById('bannerHaulerName').textContent = `${{info.hauler.name}} (${{info.hauler.capacity}} Car Cap)`;
-      document.getElementById('bannerCargoStats').textContent = `${{info.total_cargo_units}} Vehicles (${{info.total_weight_kg.toLocaleString()}} kg)`;
+      document.getElementById('bannerCargoStats').textContent = `${{info.total_cargo_units}} Vehicles (${{totalLbs.toLocaleString()}} lbs)`;
       document.getElementById('bannerDealersCount').textContent = `${{info.dealers.length}} Destination Dealerships`;
-      document.getElementById('cargoTotalUnitsWeight').textContent = `${{info.total_cargo_units}} Units • Total Weight: ${{info.total_weight_kg.toLocaleString()}} kg`;
+      document.getElementById('cargoTotalUnitsWeight').textContent = `${{info.total_cargo_units}} Units • Total Weight: ${{totalLbs.toLocaleString()}} lbs`;
     }}
 
     function renderCargoTable(cargoList) {{
       const tbody = document.getElementById('cargoTableBody');
       if (!tbody) return;
 
-      tbody.innerHTML = cargoList.map((item, idx) => `
+      tbody.innerHTML = cargoList.map((item, idx) => {{
+        const itemLbs = item.weight_lb ? Number(item.weight_lb) : Math.round(Number(item.weight_kg || 2000) * 2.20462);
+        return `
         <tr class="hover:bg-slate-800/40 transition">
           <td class="py-2.5 px-3 text-slate-500 text-center">${{idx + 1}}</td>
           <td class="py-2.5 px-3 font-mono font-medium text-sky-400">${{item.vin}}</td>
           <td class="py-2.5 px-4 text-white font-medium">${{item.model_name}}</td>
           <td class="py-2.5 px-3 text-slate-400">${{item.brand}} ${{item.series || ''}}</td>
-          <td class="py-2.5 px-3 text-right text-slate-300">${{item.weight_kg ? Number(item.weight_kg).toLocaleString() : '2,000'}}</td>
+          <td class="py-2.5 px-3 text-right text-slate-300 font-mono">${{itemLbs.toLocaleString()}}</td>
           <td class="py-2.5 px-3 text-center text-slate-400 text-[11px]">${{item.length_m || '-'}} &times; ${{item.width_m || '-'}} &times; ${{item.height_m || '-'}}m</td>
           <td class="py-2.5 px-4 text-amber-300 font-mono text-[11px]">${{item.destination_dealer_id}}</td>
         </tr>
-      `).join('');
+      `;
+      }}).join('');
     }}
 
     async function triggerSolve() {{
@@ -960,8 +964,9 @@ html_content = f'''<!DOCTYPE html>
         document.getElementById('kpiHandoverDuration').textContent = 'Trip ≤ 11.0 hours';
       }}
 
+      const resLbs = res.total_cargo_weight_lbs ? res.total_cargo_weight_lbs : Math.round(Number(res.total_cargo_weight_kg || 0) * 2.20462);
       document.getElementById('kpiCapacity').textContent = `${{res.total_cargo_units}} / ${{res.hauler_capacity}} Cars`;
-      document.getElementById('kpiCargoWeight').textContent = `${{res.total_cargo_weight_kg.toLocaleString()}} kg (C-10)`;
+      document.getElementById('kpiCargoWeight').textContent = `${{resLbs.toLocaleString()}} lbs (C-10)`;
 
       if (res.cost_breakdown) {{
         document.getElementById('kpiTotalCost').textContent = `$${{res.cost_breakdown.total_trip_cost.toLocaleString()}}`;

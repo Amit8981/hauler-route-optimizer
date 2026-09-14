@@ -48,13 +48,14 @@ for idx, row in solver.df_loads.iterrows():
                 'id': int(info['hauler']['id']) if info['hauler'].get('id') else None,
                 'name': info['hauler'].get('name', 'Standard Hauler'),
                 'capacity': int(info['hauler'].get('capacity', 9)),
-                'gross_weight': float(info['hauler'].get('gross_weight', 36000.0)),
+                'gross_weight': float(info['hauler'].get('gross_weight', 80000.0)),
                 'max_dealers': info['max_dealers']
             },
             'dealers': info['dealers'],
             'cargo_items': cargo,
             'total_cargo_units': len(cargo),
-            'total_weight_kg': sum(float(c['weight_kg']) if c['weight_kg'] and str(c['weight_kg']) != 'nan' else 2000.0 for c in cargo)
+            'total_weight_lbs': sum(int(round(float(c.get('weight_lb', float(c.get('weight_kg', 2000.0)) * 2.20462)))) for c in cargo),
+            'total_weight_kg': sum(float(c['weight_kg']) if c.get('weight_kg') and str(c['weight_kg']) != 'nan' else 2000.0 for c in cargo)
         }
     }
     
