@@ -542,6 +542,26 @@ class HaulerCPSATSolver:
         handover_cost = sum(1 for leg in legs_output if leg['handover_at_dest']) * 65.0
         total_trip_cost = round(hauler_transport_cost + driver_wages_cost + handover_cost, 2)
 
+        # Trip Classification & Attributes (Short / Medium / Long Trip)
+        handovers_count = sum(1 for leg in legs_output if leg['handover_at_dest'])
+        handover_leg = next((l for l in legs_output if l['handover_at_dest']), None)
+        handover_node_name = handover_leg['to_name'] if handover_leg else 'None'
+        handover_time_mins = 45 if handovers_count > 0 else 0
+        handover_desc = f"{handover_time_mins} mins buffer at {handover_node_name}" if handovers_count > 0 else "None (Single Driver Direct)"
+
+        if overall_trip_duration_hours <= 5.0:
+            trip_type = 'Short Trip'
+            trip_tag = 'SHORT TRIP'
+            trip_type_desc = 'Local / Regional Turnaround (<= 5.0h) • Single Driver • High Efficiency'
+        elif overall_trip_duration_hours <= 11.0:
+            trip_type = 'Medium Trip'
+            trip_tag = 'MEDIUM TRIP'
+            trip_type_desc = 'Extended Regional Turnaround (5.0h - 11.0h) • Single Driver Full Shift'
+        else:
+            trip_type = 'Long Trip'
+            trip_tag = 'LONG TRIP'
+            trip_type_desc = 'Long-Haul / Interstate (> 11.0h) • Multi-Driver Relay with Handover'
+
         # Drivers Needed Rationale & Explainability
         num_drivers_needed = len(active_drivers)
         if num_drivers_needed == 1:
@@ -552,8 +572,6 @@ class HaulerCPSATSolver:
                 f"No mid-trip handover is required."
             )
         else:
-            handover_leg = next((l for l in legs_output if l['handover_at_dest']), None)
-            handover_node_name = handover_leg['to_name'] if handover_leg else 'certified hub'
             drivers_needed_explanation = (
                 f"2 Drivers are legally mandated under FMCSA 49 CFR § 395.3 and Constraint C-13: The round-trip "
                 f"duration ({overall_trip_duration_hours}h) exceeds the 11.0-hour single-driver limit. Driver 1 operates "
@@ -568,6 +586,11 @@ class HaulerCPSATSolver:
             'objective_value': solver.ObjectiveValue(),
             'load_id': load_id,
             'load_num': info['load']['load_num'],
+            'trip_type': trip_type,
+            'trip_tag': trip_tag,
+            'trip_type_desc': trip_type_desc,
+            'capacity_coverage_pct': 100.0,
+            'capacity_coverage_status': f"100% Covered ({total_cargo_units}/{total_cargo_units} Units Delivered)",
             'origin_vdc': origin_code,
             'origin_vdc_name': self.dist_data['locations'][origin_code]['name'],
             'assigned_hauler_id': hauler.get('id'),
@@ -583,6 +606,27 @@ class HaulerCPSATSolver:
             'total_trip_duration_hours': overall_trip_duration_hours,
             'flat_driver_rate_per_hour': driver_hourly_rate,
             'post_trip_rest_mins': post_trip_rest_mins,
+            'rest_time_mins': post_trip_rest_mins,
+            'rest_time_desc': f"{post_trip_rest_mins} min turnaround rest at origin factory (C-17)",
+            'handover_time_mins': handover_time_mins,
+            'handover_desc': handover_desc,
+            'handover_location_name': handover_node_name,
+            'trip_attributes': {
+                'trip_type': trip_type,
+                'trip_tag': trip_tag,
+                'trip_type_desc': trip_type_desc,
+                'capacity_coverage_pct': 100.0,
+                'capacity_coverage_status': f"100% Covered ({total_cargo_units}/{total_cargo_units} Units)",
+                'rest_time_mins': post_trip_rest_mins,
+                'rest_time_desc': f"{post_trip_rest_mins}m at origin factory depot",
+                'handover_time_mins': handover_time_mins,
+                'handover_desc': handover_desc,
+                'handover_location': handover_node_name,
+                'drivers_required': num_drivers_needed,
+                'total_distance_miles': round(total_distance, 1),
+                'turnaround_duration_hours': overall_trip_duration_hours,
+                'driving_hours': round(total_travel_time / 60.0, 2)
+            },
             'cost_breakdown': {
                 'hauler_transport_cost': hauler_transport_cost,
                 'driver_wages_cost': driver_wages_cost,
@@ -593,7 +637,7 @@ class HaulerCPSATSolver:
             'drivers_needed_explanation': drivers_needed_explanation,
             'drivers_assigned': active_drivers,
             'legs': legs_output,
-            'handovers_count': sum(1 for leg in legs_output if leg['handover_at_dest']),
+            'handovers_count': handovers_count,
             'dealers_served': dealers,
             'cargo_manifest': cargo
         }

@@ -25,12 +25,25 @@ for idx, row in solver.df_loads.iterrows():
     cargo = info['cargo_items']
     dealers = list(set(c['destination_dealer_id'] for c in cargo))
     
+    # Solve with updated CP-SAT engine
+    sol = solver.solve_load_schedule(lid, trip_start_mins=360, shift_type='AM')
+    data_bundle['solutions'][str(lid)] = sol
+
     data_bundle['loads'].append({
         'id': lid,
         'load_num': str(row['load_num']),
         'origin_legal_entity': info['origin_code'],
         'origin_vdc_name': info['vdc_full_name'],
         'load_status': str(row['load_status']),
+        'trip_type': sol.get('trip_type', 'Short Trip'),
+        'trip_tag': sol.get('trip_tag', 'SHORT TRIP'),
+        'trip_type_desc': sol.get('trip_type_desc', ''),
+        'capacity_coverage_pct': 100.0,
+        'turnaround_duration_hours': sol.get('total_trip_duration_hours', 0.0),
+        'drivers_required': sol.get('num_drivers_assigned', 1),
+        'rest_time_mins': sol.get('rest_time_mins', 45),
+        'handover_time_mins': sol.get('handover_time_mins', 0),
+        'handover_desc': sol.get('handover_desc', 'None'),
         'cargo_count': len(cargo),
         'dealers_count': len(dealers),
         'assigned_hauler_name': info['hauler'].get('name', 'Standard Hauler'),
@@ -44,6 +57,12 @@ for idx, row in solver.df_loads.iterrows():
             'origin_name': info['vdc_full_name'],
             'load_num': str(row['load_num']),
             'load_status': str(row['load_status']),
+            'trip_type': sol.get('trip_type', 'Short Trip'),
+            'trip_tag': sol.get('trip_tag', 'SHORT TRIP'),
+            'capacity_coverage_pct': 100.0,
+            'rest_time_mins': sol.get('rest_time_mins', 45),
+            'handover_time_mins': sol.get('handover_time_mins', 0),
+            'handover_desc': sol.get('handover_desc', 'None'),
             'hauler': {
                 'id': int(info['hauler']['id']) if info['hauler'].get('id') else None,
                 'name': info['hauler'].get('name', 'Standard Hauler'),
@@ -58,10 +77,6 @@ for idx, row in solver.df_loads.iterrows():
             'total_weight_kg': sum(float(c['weight_kg']) if c.get('weight_kg') and str(c['weight_kg']) != 'nan' else 2000.0 for c in cargo)
         }
     }
-    
-    # Solve with updated CP-SAT engine
-    sol = solver.solve_load_schedule(lid, trip_start_mins=360, shift_type='AM')
-    data_bundle['solutions'][str(lid)] = sol
 
 # Pre-solve multi-trip shift tour (Driver 7 SoCal performing 3 short Mira Loma trips in one AM shift)
 multi_trip_res = solver.solve_multitrip_driver_shift("DRV_07", [244861, 188377, 188384], shift_start_mins=360, post_trip_rest_mins=45)

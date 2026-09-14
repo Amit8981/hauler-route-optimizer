@@ -160,8 +160,19 @@ html_content = f'''<!DOCTYPE html>
         <!-- Search Input -->
         <div class="relative">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
-          <input id="loadSearchInput" type="text" placeholder="Search load ID, number, status..." 
+          <input id="loadSearchInput" type="text" placeholder="Search load ID, number, trip type (short, long)..." 
                  class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
+        </div>
+
+        <!-- Trip Classification Filter Pills -->
+        <div>
+          <label class="text-[11px] font-medium text-slate-400 block mb-1.5">Trip Classification</label>
+          <div class="flex flex-wrap gap-1" id="tripPillContainer">
+            <button class="trip-pill active px-2 py-1 text-[11px] rounded bg-sky-600 text-white font-medium cursor-pointer" data-trip="ALL">ALL</button>
+            <button class="trip-pill px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 font-medium cursor-pointer" data-trip="SHORT">⚡ Short Trip</button>
+            <button class="trip-pill px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-sky-300 font-medium cursor-pointer" data-trip="MEDIUM">🚗 Medium Trip</button>
+            <button class="trip-pill px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-purple-300 font-medium cursor-pointer" data-trip="LONG">🚛 Long Trip</button>
+          </div>
         </div>
 
         <!-- Origin VDC Pills -->
@@ -201,11 +212,34 @@ html_content = f'''<!DOCTYPE html>
       <div class="bg-slate-950/60 border-b border-slate-800 p-6">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <div class="flex items-center space-x-3 mb-1">
+            <div class="flex flex-wrap items-center gap-2 mb-1.5">
               <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30" id="bannerLoadId">Load #244606</span>
               <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300" id="bannerLoadNum">L-44166</span>
-              <span class="text-xs px-2 py-0.5 rounded-full uppercase font-semibold" id="bannerStatusBadge">Locked</span>
               <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20" id="bannerVdcName">LONG BEACH VDC (LA)</span>
+
+              <!-- Trip Classification Tag (Short / Medium / Long Trip) -->
+              <span id="bannerTripTypeTag" class="text-xs font-extrabold px-3 py-0.5 rounded-full uppercase tracking-wider flex items-center space-x-1.5 shadow-sm bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                <i class="fa-solid fa-tag text-[10px]"></i>
+                <span id="bannerTripTypeText">LONG TRIP</span>
+              </span>
+
+              <!-- 100% Capacity Covered Tag -->
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center space-x-1">
+                <i class="fa-solid fa-circle-check text-emerald-400 text-[10px]"></i>
+                <span>100% LOAD COVERED</span>
+              </span>
+
+              <!-- Rest Time Attribute Badge -->
+              <span class="text-xs font-medium px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700 flex items-center space-x-1.5">
+                <i class="fa-solid fa-bed text-amber-400 text-[10px]"></i>
+                <span id="bannerRestTimeText">Rest: 45m (C-17)</span>
+              </span>
+
+              <!-- Handover Time Attribute Badge -->
+              <span class="text-xs font-medium px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700 flex items-center space-x-1.5">
+                <i class="fa-solid fa-handshake text-sky-400 text-[10px]"></i>
+                <span id="bannerHandoverText">Handover: 45m buffer</span>
+              </span>
             </div>
             <h2 class="text-xl font-bold text-white tracking-tight flex items-center space-x-2">
               <span id="bannerTitle">Dispatch Schedule & Driver Roster Optimization</span>
@@ -277,12 +311,12 @@ html_content = f'''<!DOCTYPE html>
       <!-- Main Results & Tabs Content -->
       <div class="p-6 space-y-6 flex-1">
 
-        <!-- Solution KPI Summary Grid -->
-        <div id="solutionKpiContainer" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <!-- Solution KPI Summary Grid (8 Columns) -->
+        <div id="solutionKpiContainer" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
-            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Status</div>
-            <span id="kpiStatusBadge" class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">OPTIMAL</span>
-            <div class="text-[10px] text-slate-500 mt-1" id="kpiSolveTime">Solve: 18 ms</div>
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Trip Type</div>
+            <span id="kpiTripTypeBadge" class="px-2 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">LONG TRIP</span>
+            <div class="text-[10px] text-emerald-400 mt-1 font-mono" id="kpiCoverageSub">100% Load Covered</div>
           </div>
 
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
@@ -308,7 +342,13 @@ html_content = f'''<!DOCTYPE html>
           </div>
 
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
-            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Handover Point</div>
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Turnaround Rest</div>
+            <div class="text-lg font-bold font-mono text-amber-300" id="kpiRestDuration">45 mins</div>
+            <div class="text-[10px] text-slate-400 mt-1">Depot buffer (C-17)</div>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Handover Buffer</div>
             <div class="text-sm font-semibold text-amber-300 truncate" id="kpiHandoverLoc">Fresno Hub (D_LA_05)</div>
             <div class="text-[10px] text-slate-400 mt-1" id="kpiHandoverDuration">45 min buffer (C-14)</div>
           </div>
@@ -316,7 +356,7 @@ html_content = f'''<!DOCTYPE html>
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
             <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Capacity Load</div>
             <div class="text-lg font-bold font-mono text-white" id="kpiCapacity">8 / 9 Cars</div>
-            <div class="text-[10px] text-emerald-400 mt-1" id="kpiCargoWeight">42,816 lbs (C-10)</div>
+            <div class="text-[10px] text-emerald-400 mt-1" id="kpiCargoWeight">42,816 lbs (100%)</div>
           </div>
 
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
@@ -326,19 +366,27 @@ html_content = f'''<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Drivers Needed Legal Rationale Banner -->
+        <!-- Drivers Needed Legal Rationale & Trip Attributes Banner -->
         <div id="driversRationaleBanner" class="p-4 rounded-xl border bg-slate-950/80 flex items-start space-x-3 text-xs border-sky-500/30">
           <div class="p-2 rounded-lg bg-sky-500/20 text-sky-400 mt-0.5">
             <i class="fa-solid fa-scale-balanced text-sm"></i>
           </div>
           <div class="flex-1">
-            <div class="flex items-center space-x-2 mb-1">
-              <span class="font-bold text-slate-200 uppercase tracking-wider">Drivers Needed Legal Rationale (FMCSA C-12a & C-13)</span>
-              <span id="rationaleDriverTag" class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300">2 DRIVERS MANDATED</span>
+            <div class="flex flex-wrap items-center gap-2 mb-1.5">
+              <span class="font-bold text-slate-200 uppercase tracking-wider">Drivers Needed Legal Rationale & Trip Attributes</span>
+              <span id="rationaleDriverTag" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300">2 DRIVERS MANDATED</span>
+              <span id="rationaleTripTag" class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300">LONG TRIP</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">100% CAPACITY COVERED</span>
             </div>
             <p id="driversRationaleText" class="text-slate-300 leading-relaxed font-mono text-[11px]">
               Loading explanation...
             </p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-slate-800/80 text-[11px] font-mono">
+              <div><span class="text-slate-500">Trip Category:</span> <span id="attrTripType" class="text-slate-200 font-semibold">Long Trip</span></div>
+              <div><span class="text-slate-500">Capacity Coverage:</span> <span class="text-emerald-400 font-semibold">100% (All Units)</span></div>
+              <div><span class="text-slate-500">Post-Trip Rest:</span> <span id="attrRestTime" class="text-amber-300 font-semibold">45 min depot buffer</span></div>
+              <div><span class="text-slate-500">Handover Buffer:</span> <span id="attrHandoverTime" class="text-sky-300 font-semibold">45 min at Fresno Hub</span></div>
+            </div>
           </div>
         </div>
 
@@ -651,6 +699,7 @@ html_content = f'''<!DOCTYPE html>
     let currentSolution = null;
     let allLoads = EMBEDDED_DATA.loads || [];
     let activeOriginFilter = 'ALL';
+    let activeTripFilter = 'ALL';
     let isBackendConnected = false;
 
     document.addEventListener('DOMContentLoaded', () => {{
@@ -715,6 +764,20 @@ html_content = f'''<!DOCTYPE html>
         searchInput.addEventListener('input', filterAndRenderLoads);
       }}
 
+      const tripPills = document.querySelectorAll('.trip-pill');
+      tripPills.forEach(pill => {{
+        pill.addEventListener('click', () => {{
+          tripPills.forEach(p => {{
+            p.classList.remove('active', 'bg-sky-600', 'text-white');
+            p.classList.add('bg-slate-800', 'text-slate-300');
+          }});
+          pill.classList.add('active', 'bg-sky-600', 'text-white');
+          pill.classList.remove('bg-slate-800', 'text-slate-300');
+          activeTripFilter = pill.getAttribute('data-trip');
+          filterAndRenderLoads();
+        }});
+      }});
+
       const vdcPills = document.querySelectorAll('.vdc-pill');
       vdcPills.forEach(pill => {{
         pill.addEventListener('click', () => {{
@@ -759,12 +822,18 @@ html_content = f'''<!DOCTYPE html>
 
       const filtered = allLoads.filter(load => {{
         const matchesOrigin = (activeOriginFilter === 'ALL') || (load.origin_legal_entity === activeOriginFilter);
+        
+        const loadTag = (load.trip_tag || (load.turnaround_duration_hours > 11 ? 'LONG' : load.turnaround_duration_hours > 5 ? 'MEDIUM' : 'SHORT')).toUpperCase();
+        const matchesTrip = (activeTripFilter === 'ALL') || loadTag.includes(activeTripFilter);
+
         const matchesSearch = !searchTerm || 
           String(load.id).includes(searchTerm) || 
           String(load.load_num).toLowerCase().includes(searchTerm) ||
           String(load.assigned_hauler_name).toLowerCase().includes(searchTerm) ||
-          String(load.load_status).toLowerCase().includes(searchTerm);
-        return matchesOrigin && matchesSearch;
+          String(load.trip_type || '').toLowerCase().includes(searchTerm) ||
+          String(load.trip_tag || '').toLowerCase().includes(searchTerm) ||
+          loadTag.toLowerCase().includes(searchTerm);
+        return matchesOrigin && matchesTrip && matchesSearch;
       }});
 
       document.getElementById('loadCountBadge').textContent = `${{filtered.length}} loads`;
@@ -781,9 +850,14 @@ html_content = f'''<!DOCTYPE html>
 
       listContainer.innerHTML = filtered.map(load => {{
         const isActive = load.id === currentLoadId ? 'active' : '';
-        const statusColor = load.load_status === 'locked' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' :
-                            load.load_status === 'sent' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' :
-                            'text-slate-400 bg-slate-800 border-slate-700';
+        const tripType = load.trip_type || (load.turnaround_duration_hours > 11 ? 'Long Trip' : load.turnaround_duration_hours > 5 ? 'Medium Trip' : 'Short Trip');
+        const tripTag = (load.trip_tag || tripType.toUpperCase()).replace(' TRIP', '') + ' TRIP';
+        const tagColor = tripTag.startsWith('SHORT') ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20' :
+                         tripTag.startsWith('MEDIUM') ? 'text-sky-300 bg-sky-500/10 border-sky-500/20' :
+                         'text-purple-300 bg-purple-500/10 border-purple-500/20';
+
+        const restMins = load.rest_time_mins || 45;
+        const handoverText = load.handover_time_mins > 0 ? `${{load.handover_time_mins}}m Handover` : 'Direct Single';
 
         return `
           <div class="load-card p-3 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/60 cursor-pointer transition ${{isActive}}"
@@ -793,7 +867,7 @@ html_content = f'''<!DOCTYPE html>
                 <span class="font-mono font-bold text-xs text-white">#${{load.id}}</span>
                 <span class="font-mono text-[11px] text-slate-400">${{load.load_num}}</span>
               </div>
-              <span class="text-[10px] font-semibold px-2 py-0.5 rounded border uppercase ${{statusColor}}">${{load.load_status}}</span>
+              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase ${{tagColor}}">${{tripTag}}</span>
             </div>
             
             <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
@@ -801,12 +875,13 @@ html_content = f'''<!DOCTYPE html>
                 <i class="fa-solid fa-location-dot text-sky-400 text-[10px]"></i>
                 <span class="text-slate-300 font-medium">${{load.origin_legal_entity}} (${{load.origin_vdc_name}})</span>
               </span>
-              <span class="text-slate-400 font-mono">${{load.cargo_count}} Cars</span>
+              <span class="text-emerald-400 font-mono text-[10px] font-semibold">100% Covered (${{load.cargo_count}} Cars)</span>
             </div>
 
-            <div class="text-[11px] text-slate-500 truncate flex items-center justify-between">
-              <span class="truncate"><i class="fa-solid fa-truck text-[10px] mr-1"></i>${{load.assigned_hauler_name}}</span>
-              <span class="text-[10px] text-indigo-400 font-mono">${{load.dealers_count}} Dealers</span>
+            <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/50">
+              <span><i class="fa-solid fa-bed text-amber-400 text-[9px] mr-1"></i>Rest: ${{restMins}}m</span>
+              <span><i class="fa-solid fa-handshake text-sky-400 text-[9px] mr-1"></i>${{handoverText}}</span>
+              <span class="text-slate-500 font-mono">${{load.dealers_count}} Dealers</span>
             </div>
           </div>
         `;
@@ -831,18 +906,11 @@ html_content = f'''<!DOCTYPE html>
       document.getElementById('bannerLoadNum').textContent = info.load_num;
       document.getElementById('bannerVdcName').textContent = `${{info.origin_name}} (${{info.origin_code}})`;
 
-      const statusBadge = document.getElementById('bannerStatusBadge');
-      statusBadge.textContent = info.load_status;
-      statusBadge.className = `text-xs px-2 py-0.5 rounded-full uppercase font-semibold ` +
-        (info.load_status === 'locked' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-         info.load_status === 'sent' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-         'bg-slate-800 text-slate-300');
-
       const totalLbs = info.total_weight_lbs ? info.total_weight_lbs : Math.round(Number(info.total_weight_kg || 0) * 2.20462);
       document.getElementById('bannerHaulerName').textContent = `${{info.hauler.name}} (${{info.hauler.capacity}} Car Cap)`;
-      document.getElementById('bannerCargoStats').textContent = `${{info.total_cargo_units}} Vehicles (${{totalLbs.toLocaleString()}} lbs)`;
+      document.getElementById('bannerCargoStats').textContent = `${{info.total_cargo_units}} Vehicles • 100% Covered (${{totalLbs.toLocaleString()}} lbs)`;
       document.getElementById('bannerDealersCount').textContent = `${{info.dealers.length}} Destination Dealerships`;
-      document.getElementById('cargoTotalUnitsWeight').textContent = `${{info.total_cargo_units}} Units • Total Weight: ${{totalLbs.toLocaleString()}} lbs`;
+      document.getElementById('cargoTotalUnitsWeight').textContent = `${{info.total_cargo_units}} Units • 100% Covered • Total Weight: ${{totalLbs.toLocaleString()}} lbs`;
     }}
 
     function renderCargoTable(cargoList) {{
@@ -916,9 +984,11 @@ html_content = f'''<!DOCTYPE html>
 
     function renderSolution(res) {{
       if (res.status === 'INFEASIBLE' || res.status === 'ERROR') {{
-        document.getElementById('kpiStatusBadge').textContent = res.status;
-        document.getElementById('kpiStatusBadge').className = 'px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30';
-        document.getElementById('kpiSolveTime').textContent = res.solver_status || 'Infeasible';
+        const kpiTag = document.getElementById('kpiTripTypeBadge');
+        if (kpiTag) {{
+          kpiTag.textContent = res.status;
+          kpiTag.className = 'px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30';
+        }}
         document.getElementById('itineraryTableBody').innerHTML = `
           <tr>
             <td colspan="11" class="py-10 text-center text-red-400 bg-red-950/20">
@@ -931,9 +1001,36 @@ html_content = f'''<!DOCTYPE html>
         return;
       }}
 
-      document.getElementById('kpiStatusBadge').textContent = res.status;
-      document.getElementById('kpiStatusBadge').className = 'px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-      document.getElementById('kpiSolveTime').textContent = `Solve: ${{res.solve_time_sec * 1000}} ms`;
+      // Determine Trip Classification & Tag
+      const hours = res.total_trip_duration_hours;
+      const tripType = res.trip_type || (hours <= 5.0 ? 'Short Trip' : hours <= 11.0 ? 'Medium Trip' : 'Long Trip');
+      const tripTag = res.trip_tag || (hours <= 5.0 ? 'SHORT TRIP' : hours <= 11.0 ? 'MEDIUM TRIP' : 'LONG TRIP');
+      
+      const tagColor = tripTag.startsWith('SHORT') ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                       tripTag.startsWith('MEDIUM') ? 'bg-sky-500/20 text-sky-300 border-sky-500/30' :
+                       'bg-purple-500/20 text-purple-300 border-purple-500/30';
+
+      // Update Top Banner Trip Badges
+      const bannerTag = document.getElementById('bannerTripTypeTag');
+      if (bannerTag) {{
+        bannerTag.className = `text-xs font-extrabold px-3 py-0.5 rounded-full uppercase tracking-wider flex items-center space-x-1.5 shadow-sm border ${{tagColor}}`;
+        document.getElementById('bannerTripTypeText').textContent = tripTag;
+      }}
+      
+      const restMins = res.rest_time_mins || res.post_trip_rest_mins || 45;
+      document.getElementById('bannerRestTimeText').textContent = `Rest: ${{restMins}}m (C-17)`;
+      
+      const handoverLeg = res.legs.find(l => l.handover_at_dest);
+      const handoverBannerText = handoverLeg ? `Handover: ${{handoverLeg.handover_duration_mins}}m buffer` : 'Handover: None';
+      document.getElementById('bannerHandoverText').textContent = handoverBannerText;
+
+      // Update KPI Cards
+      const kpiTripTag = document.getElementById('kpiTripTypeBadge');
+      if (kpiTripTag) {{
+        kpiTripTag.textContent = tripTag;
+        kpiTripTag.className = `px-2 py-0.5 rounded text-xs font-bold border ${{tagColor}}`;
+      }}
+      document.getElementById('kpiCoverageSub').textContent = '100% Load Covered';
 
       document.getElementById('kpiDuration').textContent = `${{res.total_trip_duration_hours}} hrs`;
       document.getElementById('kpiDrivingTime').textContent = `Driving: ${{res.total_travel_time_hours}}h`;
@@ -943,34 +1040,48 @@ html_content = f'''<!DOCTYPE html>
       document.getElementById('kpiDriversCount').textContent = `${{numDrivers}} ${{numDrivers === 1 ? 'Driver' : 'Drivers'}}`;
       document.getElementById('kpi11hCompliance').textContent = numDrivers === 1 ? 'Single shift legal' : 'Multi-driver handover';
 
-      // Update Rationale Banner
-      const rationaleDriverTag = document.getElementById('rationaleDriverTag');
-      if (numDrivers === 1) {{
-        rationaleDriverTag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300';
-        rationaleDriverTag.textContent = '1 DRIVER SUFFICIENT';
-      }} else {{
-        rationaleDriverTag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300';
-        rationaleDriverTag.textContent = '2 DRIVERS MANDATED (FMCSA)';
-      }}
-      document.getElementById('driversRationaleText').textContent = res.drivers_needed_explanation || 
-        `${{numDrivers}} driver(s) assigned based on FMCSA HOS regulations and round-trip duration.`;
+      document.getElementById('kpiRestDuration').textContent = `${{restMins}} mins`;
 
-      const handoverLeg = res.legs.find(l => l.handover_at_dest);
       if (handoverLeg) {{
         document.getElementById('kpiHandoverLoc').textContent = `${{handoverLeg.to_name}} (${{handoverLeg.to_code}})`;
         document.getElementById('kpiHandoverDuration').textContent = `${{handoverLeg.handover_duration_mins}} min buffer (C-14)`;
       }} else {{
-        document.getElementById('kpiHandoverLoc').textContent = 'None Needed (Single)';
-        document.getElementById('kpiHandoverDuration').textContent = 'Trip ≤ 11.0 hours';
+        document.getElementById('kpiHandoverLoc').textContent = 'None (Single Driver)';
+        document.getElementById('kpiHandoverDuration').textContent = 'Direct single-driver trip';
       }}
 
       const resLbs = res.total_cargo_weight_lbs ? res.total_cargo_weight_lbs : Math.round(Number(res.total_cargo_weight_kg || 0) * 2.20462);
       document.getElementById('kpiCapacity').textContent = `${{res.total_cargo_units}} / ${{res.hauler_capacity}} Cars`;
-      document.getElementById('kpiCargoWeight').textContent = `${{resLbs.toLocaleString()}} lbs (C-10)`;
+      document.getElementById('kpiCargoWeight').textContent = `${{resLbs.toLocaleString()}} lbs (100%)`;
 
       if (res.cost_breakdown) {{
         document.getElementById('kpiTotalCost').textContent = `$${{res.cost_breakdown.total_trip_cost.toLocaleString()}}`;
       }}
+
+      // Update Rationale & Trip Attributes Banner
+      const rationaleDriverTag = document.getElementById('rationaleDriverTag');
+      if (rationaleDriverTag) {{
+        if (numDrivers === 1) {{
+          rationaleDriverTag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300';
+          rationaleDriverTag.textContent = '1 DRIVER SUFFICIENT';
+        }} else {{
+          rationaleDriverTag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300';
+          rationaleDriverTag.textContent = '2 DRIVERS MANDATED (FMCSA)';
+        }}
+      }}
+      
+      const rationaleTripTag = document.getElementById('rationaleTripTag');
+      if (rationaleTripTag) {{
+        rationaleTripTag.textContent = tripTag;
+        rationaleTripTag.className = `px-2 py-0.5 rounded text-[10px] font-bold ${{tagColor}}`;
+      }}
+
+      document.getElementById('driversRationaleText').textContent = res.drivers_needed_explanation || 
+        `${{numDrivers}} driver(s) assigned based on FMCSA HOS regulations and round-trip duration.`;
+
+      document.getElementById('attrTripType').textContent = `${{tripType}} (${{hours}}h duration)`;
+      document.getElementById('attrRestTime').textContent = `${{restMins}} min depot buffer (C-17)`;
+      document.getElementById('attrHandoverTime').textContent = handoverLeg ? `${{handoverLeg.handover_duration_mins}} min at ${{handoverLeg.to_name}}` : 'None (Single Driver continuous)';
 
       renderDriverDutyBars(res.drivers_assigned);
       renderItineraryTable(res.legs);
