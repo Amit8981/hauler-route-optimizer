@@ -15,7 +15,10 @@ data_bundle = {
     'multitrip_shifts': {},
     'dealers': solver.df_dealers.to_dict(orient='records'),
     'drivers': solver.df_drivers.to_dict(orient='records'),
-    'haulers': solver.df_haulers.to_dict(orient='records')
+    'haulers': solver.df_haulers.to_dict(orient='records'),
+    'locations': solver.dist_data.get('locations', {}),
+    'distances_miles': solver.dist_data.get('distances_miles', {}),
+    'travel_time_minutes': solver.dist_data.get('travel_time_minutes', {})
 }
 
 for idx, row in solver.df_loads.iterrows():

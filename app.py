@@ -23,6 +23,23 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/sandbox')
+def sandbox():
+    """Renders the Constraint Sandbox & What-If Scenario Tester page."""
+    return render_template('sandbox.html')
+
+
+@app.route('/api/solve_custom', methods=['POST'])
+def solve_custom():
+    """Solves user-defined custom scenario with CP-SAT."""
+    data = request.json or {}
+    try:
+        res = solver.solve_custom_scenario(data)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({'status': 'ERROR', 'message': str(e)}), 400
+
+
 @app.route('/api/loads', methods=['GET'])
 def get_loads():
     """Returns list of all loads with high-level details."""
