@@ -102,9 +102,12 @@ class HaulerCPSATSolver:
         dest_dealer_ids = list(set(item['destination_dealer_id'] for item in cargo_items))
         dealers_info = []
         for d_id in dest_dealer_ids:
+            dealer_demand = sum(1 for item in cargo_items if item.get('destination_dealer_id') == d_id)
             d_match = self.df_dealers[self.df_dealers['dealer_id'] == d_id]
             if not d_match.empty:
-                dealers_info.append(d_match.iloc[0].to_dict())
+                d_row = d_match.iloc[0].to_dict()
+                d_row['demand_units'] = dealer_demand
+                dealers_info.append(d_row)
             else:
                 loc_info = self.dist_data['locations'].get(d_id, {})
                 dealers_info.append({
@@ -113,7 +116,8 @@ class HaulerCPSATSolver:
                     'service_time_mins': 35,
                     'is_handover_allowed': 1 if '05' in d_id or '04' in d_id else 0,
                     'time_window_open': 480,
-                    'time_window_close': 1140
+                    'time_window_close': 1140,
+                    'demand_units': dealer_demand
                 })
 
         # Eligible drivers
