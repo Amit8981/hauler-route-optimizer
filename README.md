@@ -6,6 +6,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > 🚀 **Live Interactive Web UI**: **[https://amit8981.github.io/hauler-route-optimizer/](https://amit8981.github.io/hauler-route-optimizer/)**
+> 
+> 🏛️ **System Architecture & Workflow**: **[architecture/README.md](architecture/README.md)** &mdash; Detailed architectural diagrams, sequence data flow, CP-SAT mathematical formulation, REST APIs, and UI layer breakdown.
 
 An enterprise-grade Operations Research solution for **Finished Vehicle Logistics (Auto-Hauling)**, solving multi-stop Factory $\to$ Dealership $\to$ Factory routing with hauler continuity, driver assignment, **11-hour driver limits**, and **multi-driver handover mechanics** using **Google OR-Tools CP-SAT**.
 
