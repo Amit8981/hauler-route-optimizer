@@ -422,9 +422,8 @@ html_content = f'''<!DOCTYPE html>
             </button>
             <button class="tab-btn px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 cursor-pointer" onclick="switchTab('cargoTab')">
               <i class="fa-solid fa-car mr-1.5"></i> Cargo Manifest
-            </button>
-            <button class="tab-btn px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-emerald-400 hover:text-emerald-300 bg-emerald-950/20 cursor-pointer" onclick="switchTab('multiTripTab')">
-              <i class="fa-solid fa-repeat mr-1.5"></i> Multi-Trip Shift Tour (1 Driver &bull; 3 Trips)
+            <button id="tabBtnMultiTrip" class="tab-btn px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-emerald-400 hover:text-emerald-300 bg-emerald-950/20 cursor-pointer" onclick="switchTab('multiTripTab')">
+              <i class="fa-solid fa-repeat mr-1.5"></i> <span id="tabBtnMultiTripText">Multi-Trip Shift Tour</span>
             </button>
           </div>
 
@@ -523,49 +522,49 @@ html_content = f'''<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Tab 5: Multi-Trip Shift Tour (1 Driver doing 3 Short Trips) -->
+        <!-- Tab 5: Multi-Trip Shift Tour (Dynamically Linked to Selected Load) -->
         <div id="multiTripTab" class="tab-content hidden space-y-4">
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5 space-y-4">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-4 border-b border-slate-800">
               <div>
                 <div class="flex items-center space-x-2">
-                  <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">OPERATIONAL SHOWCASE</span>
-                  <h3 class="font-bold text-sm text-white">Multi-Trip Single-Driver Daily Shift Tour</h3>
+                  <span id="shiftTourBadge" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">OPERATIONAL SHOWCASE</span>
+                  <h3 id="shiftTourTitle" class="font-bold text-sm text-white">Multi-Trip Single-Driver Daily Shift Tour</h3>
                 </div>
-                <p class="text-xs text-slate-400 mt-1">Single driver executing multiple short trips within the 11-hour daily cap with mandatory 45-min turnaround rest at factory depot (C-17).</p>
+                <p id="shiftTourSubtitle" class="text-xs text-slate-400 mt-1">Single driver executing multiple short trips within the 11-hour daily cap with mandatory 45-min turnaround rest at factory depot (C-17).</p>
               </div>
               <div class="flex items-center space-x-2">
-                <span class="px-3 py-1 bg-slate-800 rounded-lg text-xs font-mono text-slate-300">Driver: Driver 7 (SoCal) (DRV_07)</span>
-                <span class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-xs font-mono">45m Turnaround Rest</span>
+                <span id="shiftTourDriverBadge" class="px-3 py-1 bg-slate-800 rounded-lg text-xs font-mono text-slate-300">Driver: Marcus Vance (West Coast)</span>
+                <span id="shiftTourRestBadge" class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-xs font-mono">45m Turnaround Rest</span>
               </div>
             </div>
 
             <!-- Multi-Trip Summary Cards -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
-                <div class="text-[10px] text-slate-400 uppercase font-medium">Trips Completed</div>
-                <div class="text-lg font-bold font-mono text-white mt-1">3 Round-Trips</div>
-                <div class="text-[10px] text-slate-500">Loads #244861, #188377, #188384</div>
+                <div class="text-[10px] text-slate-400 uppercase font-medium">Trips in Shift</div>
+                <div id="shiftTourTripsCompleted" class="text-lg font-bold font-mono text-white mt-1">3 Round-Trips</div>
+                <div id="shiftTourLoadsList" class="text-[10px] text-slate-500">Loads #244861, #188377, #188384</div>
               </div>
               <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
                 <div class="text-[10px] text-slate-400 uppercase font-medium">Total Shift Duty</div>
-                <div class="text-lg font-bold font-mono text-emerald-400 mt-1">5.40 hrs</div>
-                <div class="text-[10px] text-emerald-400">Within 11.0h Daily Cap (C-12a)</div>
+                <div id="shiftTourTotalDuty" class="text-lg font-bold font-mono text-emerald-400 mt-1">5.40 hrs</div>
+                <div id="shiftTourDutyCompliance" class="text-[10px] text-emerald-400">Within 11.0h Daily Cap (C-12a)</div>
               </div>
               <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
                 <div class="text-[10px] text-slate-400 uppercase font-medium">Total Shift Span</div>
-                <div class="text-lg font-bold font-mono text-sky-400 mt-1">6.57 hrs</div>
-                <div class="text-[10px] text-slate-400">06:00 AM &rarr; 03:06 PM (AM Window)</div>
+                <div id="shiftTourTotalSpan" class="text-lg font-bold font-mono text-sky-400 mt-1">6.57 hrs</div>
+                <div id="shiftTourSpanDesc" class="text-[10px] text-slate-400">06:00 AM &rarr; 03:06 PM (AM Window)</div>
               </div>
               <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
                 <div class="text-[10px] text-slate-400 uppercase font-medium">Total Mileage</div>
-                <div class="text-lg font-bold font-mono text-white mt-1">143.7 miles</div>
-                <div class="text-[10px] text-slate-500">Mira Loma Terminal Network</div>
+                <div id="shiftTourMileage" class="text-lg font-bold font-mono text-white mt-1">143.7 miles</div>
+                <div id="shiftTourNetwork" class="text-[10px] text-slate-500">Terminal Network</div>
               </div>
               <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
                 <div class="text-[10px] text-slate-400 uppercase font-medium">Turnaround Rest</div>
-                <div class="text-lg font-bold font-mono text-amber-300 mt-1">45 min / trip</div>
-                <div class="text-[10px] text-amber-400/80">Mandatory depot buffer (C-17)</div>
+                <div id="shiftTourRestDesc" class="text-lg font-bold font-mono text-amber-300 mt-1">45 min / trip</div>
+                <div id="shiftTourRestSub" class="text-[10px] text-amber-400/80">Mandatory depot buffer (C-17)</div>
               </div>
             </div>
 
@@ -574,43 +573,17 @@ html_content = f'''<!DOCTYPE html>
               <table class="w-full text-left text-xs">
                 <thead class="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                   <tr>
-                    <th class="py-2.5 px-3">Trip #</th>
-                    <th class="py-2.5 px-3">Load ID & Num</th>
-                    <th class="py-2.5 px-3">Departure (Depot)</th>
-                    <th class="py-2.5 px-3">Return (Depot)</th>
+                    <th class="py-2.5 px-3">Trip / Phase</th>
+                    <th class="py-2.5 px-3">Load ID & Details</th>
+                    <th class="py-2.5 px-3">Departure</th>
+                    <th class="py-2.5 px-3">Arrival / Return</th>
                     <th class="py-2.5 px-3 text-right">Distance</th>
-                    <th class="py-2.5 px-3 text-right">Trip Duty</th>
-                    <th class="py-2.5 px-4">Post-Trip Action</th>
+                    <th class="py-2.5 px-3 text-right">Duty Hours</th>
+                    <th class="py-2.5 px-4">Post-Trip Action & Mandates</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-800/60 font-mono text-slate-200">
-                  <tr class="hover:bg-slate-800/40">
-                    <td class="py-3 px-3 font-bold text-sky-400 text-center">1</td>
-                    <td class="py-3 px-3"><span class="font-bold text-white">#244861</span> (L-44167)</td>
-                    <td class="py-3 px-3 text-slate-300">06:00 AM</td>
-                    <td class="py-3 px-3 text-amber-300 font-bold">08:32 AM</td>
-                    <td class="py-3 px-3 text-right">47.9 mi</td>
-                    <td class="py-3 px-3 text-right text-emerald-400 font-bold">1.88 hrs</td>
-                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">45-min Rest at Mira Loma Depot</span></td>
-                  </tr>
-                  <tr class="hover:bg-slate-800/40">
-                    <td class="py-3 px-3 font-bold text-sky-400 text-center">2</td>
-                    <td class="py-3 px-3"><span class="font-bold text-white">#188377</span> (L-8415)</td>
-                    <td class="py-3 px-3 text-slate-300">09:17 AM</td>
-                    <td class="py-3 px-3 text-amber-300 font-bold">11:49 AM</td>
-                    <td class="py-3 px-3 text-right">47.9 mi</td>
-                    <td class="py-3 px-3 text-right text-emerald-400 font-bold">1.88 hrs</td>
-                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">45-min Rest at Mira Loma Depot</span></td>
-                  </tr>
-                  <tr class="hover:bg-slate-800/40">
-                    <td class="py-3 px-3 font-bold text-sky-400 text-center">3</td>
-                    <td class="py-3 px-3"><span class="font-bold text-white">#188384</span> (M-17213)</td>
-                    <td class="py-3 px-3 text-slate-300">12:34 PM</td>
-                    <td class="py-3 px-3 text-amber-300 font-bold">03:06 PM</td>
-                    <td class="py-3 px-3 text-right">47.9 mi</td>
-                    <td class="py-3 px-3 text-right text-emerald-400 font-bold">1.63 hrs</td>
-                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Shift Complete &bull; Clock-out</span></td>
-                  </tr>
+                <tbody id="multiTripTableBody" class="divide-y divide-slate-800/60 font-mono text-slate-200">
+                  <!-- Dynamically populated via renderMultiTripTour(res) -->
                 </tbody>
               </table>
             </div>
@@ -1088,6 +1061,7 @@ html_content = f'''<!DOCTYPE html>
       renderItineraryTable(res.legs);
       renderGanttChart(res);
       renderCircuitDiagram(res);
+      renderMultiTripTour(res);
     }}
 
     function renderDriverDutyBars(drivers) {{
@@ -1333,6 +1307,283 @@ html_content = f'''<!DOCTYPE html>
       `);
 
       container.innerHTML = nodesHtml.join('');
+    }}
+
+    function formatMinsToAmPm(totalMins) {{
+      const total = Math.round(Number(totalMins) || 0);
+      const hours = Math.floor(total / 60) % 24;
+      const mins = total % 60;
+      const period = hours < 12 ? 'AM' : 'PM';
+      const dispHour = hours % 12 === 0 ? 12 : hours % 12;
+      return `${{String(dispHour).padStart(2, '0')}}:${{String(mins).padStart(2, '0')}} ${{period}}`;
+    }}
+
+    function renderMultiTripTour(res) {{
+      if (!res) return;
+      const loadId = res.load_id;
+      const vdcCode = res.origin_vdc || 'LA';
+      const vdcName = res.origin_vdc_name || res.origin_vdc || 'Depot';
+      const hours = Number(res.total_trip_duration_hours || 0);
+      const tripType = res.trip_type || (hours <= 5.0 ? 'Short Trip' : hours <= 11.0 ? 'Medium Trip' : 'Long Trip');
+      
+      const primaryDriver = (res.drivers_assigned && res.drivers_assigned.length > 0)
+        ? res.drivers_assigned[0]
+        : {{ driver: {{ name: 'Lead Commercial Driver', driver_id: 'DRV_01' }}, total_duty_hours: hours }};
+      const primaryDriverName = primaryDriver.driver?.name || primaryDriver.driver_name || 'Assigned Driver';
+      const primaryDriverId = primaryDriver.driver?.driver_id || primaryDriver.driver_id || 'DRV_01';
+
+      const reliefDriver = (res.drivers_assigned && res.drivers_assigned.length > 1)
+        ? res.drivers_assigned[1]
+        : null;
+      const reliefDriverName = reliefDriver ? (reliefDriver.driver?.name || reliefDriver.driver_name) : 'Relief Driver';
+
+      const btnText = document.getElementById('tabBtnMultiTripText');
+      const badgeEl = document.getElementById('shiftTourBadge');
+      const titleEl = document.getElementById('shiftTourTitle');
+      const subEl = document.getElementById('shiftTourSubtitle');
+      const driverBadgeEl = document.getElementById('shiftTourDriverBadge');
+      const restBadgeEl = document.getElementById('shiftTourRestBadge');
+      const tripsCompletedEl = document.getElementById('shiftTourTripsCompleted');
+      const loadsListEl = document.getElementById('shiftTourLoadsList');
+      const totalDutyEl = document.getElementById('shiftTourTotalDuty');
+      const dutyCompEl = document.getElementById('shiftTourDutyCompliance');
+      const totalSpanEl = document.getElementById('shiftTourTotalSpan');
+      const spanDescEl = document.getElementById('shiftTourSpanDesc');
+      const mileageEl = document.getElementById('shiftTourMileage');
+      const networkEl = document.getElementById('shiftTourNetwork');
+      const restDescEl = document.getElementById('shiftTourRestDesc');
+      const restSubEl = document.getElementById('shiftTourRestSub');
+      const tbody = document.getElementById('multiTripTableBody');
+
+      if (!tbody) return;
+
+      if (tripType === 'Short Trip') {{
+        // --- CASE A: SHORT TRIP MULTI-TRIP CHAINING ---
+        if (btnText) btnText.innerHTML = `Multi-Trip Tour (Chained 3 Trips &bull; 1 Driver)`;
+        if (badgeEl) {{
+          badgeEl.className = 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold';
+          badgeEl.textContent = 'MULTI-TRIP CHAINING (SHORT HAUL)';
+        }}
+        if (titleEl) titleEl.textContent = `Daily Driver Shift Tour • ${{primaryDriverName}} (Linked to Load #${{loadId}})`;
+        if (subEl) subEl.textContent = `Driver executing multiple quick round-trips from ${{vdcName}} within the 11.0-hour statutory cap, with mandatory 45-min factory turnaround rest between trips (Constraint C-17).`;
+        if (driverBadgeEl) driverBadgeEl.textContent = `Driver: ${{primaryDriverName}} (${{primaryDriverId}})`;
+        if (restBadgeEl) {{
+          restBadgeEl.className = 'px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-xs font-mono';
+          restBadgeEl.textContent = '45m Turnaround Rest (C-17)';
+        }}
+
+        // Find companion short loads from same origin terminal in EMBEDDED_DATA
+        const allLoads = (window.EMBEDDED_DATA && window.EMBEDDED_DATA.loads) ? window.EMBEDDED_DATA.loads : [];
+        let sameVdcShorts = allLoads.filter(l => (l.origin_legal_entity === vdcCode || l.origin_vdc_name === vdcName) && (l.trip_type === 'Short Trip' || l.turnaround_duration_hours <= 5.0));
+        
+        // Ensure selected load is present
+        let selectedLoadObj = sameVdcShorts.find(l => l.id === loadId);
+        if (!selectedLoadObj) {{
+          selectedLoadObj = {{
+            id: loadId,
+            load_num: res.load_num || `L-${{loadId}}`,
+            turnaround_duration_hours: hours,
+            total_distance_miles: res.total_distance_miles
+          }};
+          sameVdcShorts.unshift(selectedLoadObj);
+        }}
+
+        // Pick 2 or 3 loads for the shift tour
+        let chained = [selectedLoadObj];
+        for (let l of sameVdcShorts) {{
+          if (chained.length >= 3) break;
+          if (l.id !== selectedLoadObj.id) {{
+            chained.push(l);
+          }}
+        }}
+        if (chained.length < 3) {{
+          for (let l of allLoads) {{
+            if (chained.length >= 3) break;
+            if (l.id !== selectedLoadObj.id && (l.trip_type === 'Short Trip' || l.turnaround_duration_hours <= 5.0)) {{
+              chained.push(l);
+            }}
+          }}
+        }}
+
+        let curMins = 360; // 06:00 AM start
+        let cumulativeDuty = 0.0;
+        let totalMiles = 0.0;
+        let tableRows = '';
+
+        chained.forEach((t, idx) => {{
+          const durHours = Number(t.turnaround_duration_hours || 2.5);
+          const tripDuty = Math.max(1.0, durHours - 0.4);
+          cumulativeDuty += tripDuty;
+          const tripMiles = Number(t.total_distance_miles || 47.9);
+          totalMiles += tripMiles;
+
+          const depTimeStr = formatMinsToAmPm(curMins);
+          const retMins = curMins + Math.round(durHours * 60);
+          const retTimeStr = formatMinsToAmPm(retMins);
+
+          const isCurrent = (t.id === loadId);
+          const isLast = (idx === chained.length - 1);
+          const postAction = isLast 
+            ? '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Shift Complete &bull; Clock-out</span>'
+            : `<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">45-min Rest at ${{vdcName}} Depot (C-17)</span>`;
+
+          tableRows += `
+            <tr class="hover:bg-slate-800/40 ${{isCurrent ? 'bg-sky-950/30 border-l-4 border-sky-400' : ''}}">
+              <td class="py-3 px-3 font-bold text-sky-400 text-center">${{idx + 1}}</td>
+              <td class="py-3 px-3">
+                <span class="font-bold text-white">#${{t.id}}</span> (${{t.load_num || `L-${{t.id}}`}})
+                ${{isCurrent ? '<span class="ml-1.5 px-1.5 py-0.2 rounded bg-sky-500/30 text-sky-200 text-[9px] font-extrabold uppercase">★ CURRENT LOAD</span>' : ''}}
+              </td>
+              <td class="py-3 px-3 text-slate-300">${{depTimeStr}}</td>
+              <td class="py-3 px-3 text-amber-300 font-bold">${{retTimeStr}}</td>
+              <td class="py-3 px-3 text-right">${{tripMiles.toFixed(1)}} mi</td>
+              <td class="py-3 px-3 text-right text-emerald-400 font-bold">${{tripDuty.toFixed(2)}} hrs</td>
+              <td class="py-3 px-4">${{postAction}}</td>
+            </tr>
+          `;
+
+          curMins = retMins + 45;
+        }});
+
+        const shiftSpanHours = ((curMins - 45 - 360) / 60.0).toFixed(2);
+        const clockOutStr = formatMinsToAmPm(curMins - 45);
+
+        if (tripsCompletedEl) tripsCompletedEl.textContent = `${{chained.length}} Round-Trips`;
+        if (loadsListEl) loadsListEl.textContent = `Loads ` + chained.map(t => `#${{t.id}}`).join(', ');
+        if (totalDutyEl) totalDutyEl.textContent = `${{cumulativeDuty.toFixed(2)}} hrs`;
+        if (dutyCompEl) dutyCompEl.innerHTML = `<span class="text-emerald-400">Within 11.0h Daily Cap (C-12a)</span>`;
+        if (totalSpanEl) totalSpanEl.textContent = `${{shiftSpanHours}} hrs`;
+        if (spanDescEl) spanDescEl.textContent = `06:00 AM &rarr; ${{clockOutStr}} (AM Window)`;
+        if (mileageEl) mileageEl.textContent = `${{totalMiles.toFixed(1)}} miles`;
+        if (networkEl) networkEl.textContent = `${{vdcName}} Terminal Network`;
+        if (restDescEl) restDescEl.textContent = '45 min / trip';
+        if (restSubEl) restSubEl.textContent = 'Mandatory depot buffer (C-17)';
+        tbody.innerHTML = tableRows;
+
+      }} else if (tripType === 'Medium Trip') {{
+        // --- CASE B: MEDIUM TRIP DEDICATED FULL-SHIFT ---
+        if (btnText) btnText.innerHTML = `Daily Shift Tour (Dedicated Full Shift &bull; 1 Driver)`;
+        if (badgeEl) {{
+          badgeEl.className = 'px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold';
+          badgeEl.textContent = 'DEDICATED FULL-SHIFT RUN (MEDIUM HAUL)';
+        }}
+        if (titleEl) titleEl.textContent = `Dedicated Single-Shift Tour • ${{primaryDriverName}} (Linked to Load #${{loadId}})`;
+        if (subEl) subEl.textContent = `Extended regional run consuming single-driver daily duty capacity. Within 11.0h daily cap (C-12a); full shift allocated without secondary chaining.`;
+        if (driverBadgeEl) driverBadgeEl.textContent = `Driver: ${{primaryDriverName}} (${{primaryDriverId}})`;
+        if (restBadgeEl) {{
+          restBadgeEl.className = 'px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-xs font-mono';
+          restBadgeEl.textContent = '45m Turnaround Rest (C-17)';
+        }}
+
+        const depMins = 360; // 06:00 AM
+        const retMins = depMins + Math.round(hours * 60);
+        const depStr = formatMinsToAmPm(depMins);
+        const retStr = formatMinsToAmPm(retMins);
+        const clockOutStr = formatMinsToAmPm(retMins + 45);
+        const spanHours = (hours + 0.75).toFixed(2);
+
+        if (tripsCompletedEl) tripsCompletedEl.textContent = `1 Dedicated Run`;
+        if (loadsListEl) loadsListEl.textContent = `Load #${{loadId}} (${{res.load_num || 'Extended Regional'}})`;
+        if (totalDutyEl) totalDutyEl.textContent = `${{hours}} hrs`;
+        if (dutyCompEl) dutyCompEl.innerHTML = `<span class="text-emerald-400">Full Daily Shift &bull; <= 11.0h Compliant</span>`;
+        if (totalSpanEl) totalSpanEl.textContent = `${{spanHours}} hrs`;
+        if (spanDescEl) spanDescEl.textContent = `06:00 AM &rarr; ${{clockOutStr}} (AM Window)`;
+        if (mileageEl) mileageEl.textContent = `${{res.total_distance_miles}} miles`;
+        if (networkEl) networkEl.textContent = `${{vdcName}} Extended Regional Corridor`;
+        if (restDescEl) restDescEl.textContent = '45 min post-trip';
+        if (restSubEl) restSubEl.textContent = 'Factory post-trip buffer (C-17)';
+
+        tbody.innerHTML = `
+          <tr class="hover:bg-slate-800/40 bg-sky-950/30 border-l-4 border-sky-400">
+            <td class="py-3 px-3 font-bold text-sky-400 text-center">1</td>
+            <td class="py-3 px-3"><span class="font-bold text-white">#${{loadId}}</span> (${{res.load_num || `L-${{loadId}}`}}) <span class="ml-1.5 px-1.5 py-0.2 rounded bg-sky-500/30 text-sky-200 text-[9px] font-extrabold uppercase">★ CURRENT LOAD</span></td>
+            <td class="py-3 px-3 text-slate-300">${{depStr}}</td>
+            <td class="py-3 px-3 text-amber-300 font-bold">${{retStr}}</td>
+            <td class="py-3 px-3 text-right">${{res.total_distance_miles}} mi</td>
+            <td class="py-3 px-3 text-right text-emerald-400 font-bold">${{hours}} hrs</td>
+            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">45-min Inspection at ${{vdcName}} Depot (C-17)</span></td>
+          </tr>
+          <tr class="hover:bg-slate-800/40 opacity-75">
+            <td class="py-3 px-3 font-bold text-slate-500 text-center">—</td>
+            <td class="py-3 px-3 text-slate-400 font-sans text-xs">Daily Shift Status</td>
+            <td class="py-3 px-3 text-slate-500">Return: ${{retStr}}</td>
+            <td class="py-3 px-3 text-emerald-400 font-bold">Clock-out: ${{clockOutStr}}</td>
+            <td class="py-3 px-3 text-right text-slate-500">—</td>
+            <td class="py-3 px-3 text-right text-slate-400 font-mono">${{hours}}h / 11.0h</td>
+            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Shift Complete &bull; 11h HOS Compliant</span></td>
+          </tr>
+        `;
+
+      }} else {{
+        // --- CASE C: LONG TRIP MULTI-DRIVER RELAY ---
+        const d1Name = primaryDriverName;
+        const d2Name = reliefDriverName;
+        const hubName = res.handover_location_name || 'Certified Handover Hub';
+        const halfMiles = (res.total_distance_miles / 2.0).toFixed(1);
+        const d1Duty = primaryDriver.total_duty_hours || (hours / 2.0).toFixed(2);
+        const d2Duty = reliefDriver ? reliefDriver.total_duty_hours : (hours / 2.0).toFixed(2);
+
+        if (btnText) btnText.innerHTML = `Relay Shift Tour (2 Drivers &bull; Handover)`;
+        if (badgeEl) {{
+          badgeEl.className = 'px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold';
+          badgeEl.textContent = 'MULTI-DRIVER RELAY SHIFT (FMCSA C-13 MANDATE)';
+        }}
+        if (titleEl) titleEl.textContent = `Interstate Relay Shift Schedule • 2 Drivers (Linked to Load #${{loadId}})`;
+        if (subEl) subEl.textContent = `Round-trip turnaround (${{hours}}h) exceeds 11.0h statutory limit. Mandatory 2-driver relay at certified hub with 45-min handover buffer (Constraints C-13 & C-14).`;
+        if (driverBadgeEl) driverBadgeEl.textContent = `Relay: ${{d1Name}} & ${{d2Name}}`;
+        if (restBadgeEl) {{
+          restBadgeEl.className = 'px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs font-mono';
+          restBadgeEl.textContent = '45m Handover Buffer (C-14)';
+        }}
+
+        const depMins = 360; // 06:00 AM
+        const swapMins = depMins + Math.round(Number(d1Duty) * 60);
+        const depSwapMins = swapMins + 45;
+        const finishMins = depSwapMins + Math.round(Number(d2Duty) * 60);
+
+        const depStr = formatMinsToAmPm(depMins);
+        const swapStr = formatMinsToAmPm(swapMins);
+        const depSwapStr = formatMinsToAmPm(depSwapMins);
+        const finishStr = formatMinsToAmPm(finishMins);
+
+        if (tripsCompletedEl) tripsCompletedEl.textContent = `1 Interstate Relay`;
+        if (loadsListEl) loadsListEl.textContent = `Load #${{loadId}} (${{res.load_num || 'Interstate'}})`;
+        if (totalDutyEl) totalDutyEl.textContent = `${{d1Duty}}h + ${{d2Duty}}h`;
+        if (dutyCompEl) dutyCompEl.innerHTML = `<span class="text-emerald-400">Both Drivers <= 11.0h Compliant</span>`;
+        if (totalSpanEl) totalSpanEl.textContent = `${{hours}} hrs`;
+        if (spanDescEl) spanDescEl.textContent = `06:00 AM &rarr; ${{finishStr}} (Interstate Relay)`;
+        if (mileageEl) mileageEl.textContent = `${{res.total_distance_miles}} miles`;
+        if (networkEl) networkEl.textContent = `${{vdcName}} Interstate Corridor`;
+        if (restDescEl) restDescEl.textContent = '45 min Handover';
+        if (restSubEl) restSubEl.textContent = `At ${{hubName}} (C-14)`;
+
+        tbody.innerHTML = `
+          <tr class="hover:bg-slate-800/40 bg-sky-950/30 border-l-4 border-sky-400">
+            <td class="py-3 px-3 font-bold text-sky-400 text-center">1</td>
+            <td class="py-3 px-3">
+              <span class="font-bold text-white">Outbound Phase</span> (${{d1Name}})
+              <span class="ml-1.5 px-1.5 py-0.2 rounded bg-sky-500/30 text-sky-200 text-[9px] font-extrabold uppercase">LEAD DRIVER</span>
+            </td>
+            <td class="py-3 px-3 text-slate-300">${{depStr}} (${{vdcName}})</td>
+            <td class="py-3 px-3 text-amber-300 font-bold">${{swapStr}} (${{hubName}})</td>
+            <td class="py-3 px-3 text-right">${{halfMiles}} mi</td>
+            <td class="py-3 px-3 text-right text-emerald-400 font-bold">${{d1Duty}} hrs</td>
+            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">45-min Handover Buffer at Hub (C-14)</span></td>
+          </tr>
+          <tr class="hover:bg-slate-800/40 bg-purple-950/30 border-l-4 border-purple-400">
+            <td class="py-3 px-3 font-bold text-purple-400 text-center">2</td>
+            <td class="py-3 px-3">
+              <span class="font-bold text-white">Return Phase</span> (${{d2Name}})
+              <span class="ml-1.5 px-1.5 py-0.2 rounded bg-purple-500/30 text-purple-200 text-[9px] font-extrabold uppercase">RELIEF DRIVER</span>
+            </td>
+            <td class="py-3 px-3 text-slate-300">${{depSwapStr}} (${{hubName}})</td>
+            <td class="py-3 px-3 text-amber-300 font-bold">${{finishStr}} (${{vdcName}})</td>
+            <td class="py-3 px-3 text-right">${{halfMiles}} mi</td>
+            <td class="py-3 px-3 text-right text-emerald-400 font-bold">${{d2Duty}} hrs</td>
+            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Shift Complete &bull; Both Drivers <= 11.0h</span></td>
+          </tr>
+        `;
+      }}
     }}
 
     function switchTab(tabId) {{
