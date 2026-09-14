@@ -1,10 +1,12 @@
-driver_id,name,home_vdc,duty_limit_mins,shift_start,shift_end,cost_per_hr,certified_haulers,is_available
-DRV_01,Driver 1 (West Coast),LA,660,360,1380,35.0,all,True
-DRV_02,Driver 2 (LB746),LA,660,360,1380,32.0,all,True
-DRV_03,Driver 3 (BE14),SF,660,360,1380,34.0,all,True
-DRV_04,Driver 4 (BE25),SF,660,360,1380,35.0,all,True
-DRV_05,Driver 5 (LB764),LA,660,420,1440,33.0,all,True
-DRV_06,Driver 6 (PNW),PT,660,360,1380,36.0,all,True
-DRV_07,Driver 7 (SoCal),ML,660,360,1380,33.0,all,True
-DRV_08,Relief Driver West (Relief 1),LA,660,480,1440,38.0,all,True
-DRV_09,Relief Driver North (Relief 2),PT,660,480,1440,38.0,all,True
+driver_id,name,home_vdc,shift_type,shift_start,shift_end,daily_limit_mins,weekly_hours_used,weekly_cap_hours,cost_per_hr,certified_haulers,is_available
+DRV_01,Driver 1 (West Coast),LA,AM,360,1080,660,38.5,70.0,35.0,all,True
+DRV_02,Driver 2 (LB746),LA,AM,360,1080,660,42.0,70.0,35.0,all,True
+DRV_03,Driver 3 (BE14),SF,AM,360,1080,660,35.0,70.0,35.0,all,True
+DRV_04,Driver 4 (BE25),SF,PM,1080,1800,660,28.0,70.0,35.0,all,True
+DRV_05,Driver 5 (LB764),LA,PM,1080,1800,660,45.5,70.0,35.0,all,True
+DRV_06,Driver 6 (PNW),PT,AM,360,1080,660,32.0,70.0,35.0,all,True
+DRV_07,Driver 7 (SoCal),ML,AM,360,1080,660,25.0,70.0,35.0,all,True
+DRV_08,Relief Driver West (Relief 1),LA,AM,360,1080,660,40.0,70.0,35.0,all,True
+DRV_09,Relief Driver North (Relief 2),PT,PM,1080,1800,660,36.5,70.0,35.0,all,True
+DRV_10,Relief Driver Central (Relief 3),SF,AM,360,1080,660,22.0,70.0,35.0,all,True
+DRV_11,Relief Driver Desert (Relief 4),04016,AM,360,1080,660,30.0,70.0,35.0,all,True

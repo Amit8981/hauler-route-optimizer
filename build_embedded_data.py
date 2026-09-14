@@ -1,6 +1,5 @@
 """
-Helper to export all 28 loads with full CP-SAT solutions and metadata into a JSON object.
-Does NOT modify any existing python files.
+Helper to export all 28 loads with updated C-1 to C-18 CP-SAT solutions and metadata into a JSON object.
 """
 
 import json
@@ -13,6 +12,7 @@ data_bundle = {
     'loads': [],
     'load_details': {},
     'solutions': {},
+    'multitrip_shifts': {},
     'dealers': solver.df_dealers.to_dict(orient='records'),
     'drivers': solver.df_drivers.to_dict(orient='records'),
     'haulers': solver.df_haulers.to_dict(orient='records')
@@ -58,11 +58,15 @@ for idx, row in solver.df_loads.iterrows():
         }
     }
     
-    # Solve with CP-SAT
-    sol = solver.solve_load_schedule(lid, trip_start_mins=420)
+    # Solve with updated CP-SAT engine
+    sol = solver.solve_load_schedule(lid, trip_start_mins=360, shift_type='AM')
     data_bundle['solutions'][str(lid)] = sol
+
+# Pre-solve multi-trip shift tour (Driver 7 SoCal performing 3 short Mira Loma trips in one AM shift)
+multi_trip_res = solver.solve_multitrip_driver_shift("DRV_07", [244861, 188377, 188384], shift_start_mins=360, post_trip_rest_mins=45)
+data_bundle['multitrip_shifts']['DRV_07'] = multi_trip_res
 
 with open('data/embedded_data.json', 'w') as f:
     json.dump(data_bundle, f)
 
-print("Exported embedded_data.json successfully! Total loads solved:", len(data_bundle['solutions']))
+print("Exported updated embedded_data.json successfully! Total loads solved:", len(data_bundle['solutions']))

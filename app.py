@@ -164,19 +164,47 @@ def solve_schedule():
     else:
         override_hauler_id = None
         
+    shift_type = data.get('shift_type', 'AM')
+    post_trip_rest_mins = int(data.get('post_trip_rest_mins', 45))
+        
     res = solver.solve_load_schedule(
         load_id=int(load_id),
         trip_start_mins=start_mins,
         max_driver_duty_mins=duty_limit_mins,
         handover_duration_mins=handover_mins,
         enforce_11hr_rule=enforce_11h,
-        override_hauler_id=override_hauler_id
+        override_hauler_id=override_hauler_id,
+        shift_type=shift_type,
+        post_trip_rest_mins=post_trip_rest_mins
     )
     
     # Cache result
     if res['status'] in ['OPTIMAL', 'FEASIBLE']:
         solutions_cache[int(load_id)] = res
         
+    return jsonify(res)
+
+
+@app.route('/api/multitrip', methods=['POST'])
+def solve_multitrip():
+    """Solves multi-trip shift chaining for a single driver performing short trips."""
+    data = request.json or {}
+    driver_id = data.get('driver_id', 'DRV_07')
+    load_ids = data.get('load_ids', [244861, 188377, 188384])
+    start_str = data.get('start_time', '06:00')
+    try:
+        parts = start_str.split(':')
+        start_mins = int(parts[0]) * 60 + int(parts[1])
+    except Exception:
+        start_mins = 360
+    rest_mins = int(data.get('post_trip_rest_mins', 45))
+    
+    res = solver.solve_multitrip_driver_shift(
+        driver_id=driver_id,
+        load_ids=load_ids,
+        shift_start_mins=start_mins,
+        post_trip_rest_mins=rest_mins
+    )
     return jsonify(res)
 
 
