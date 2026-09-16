@@ -235,6 +235,14 @@ def get_drivers():
     return jsonify({'drivers': solver.df_drivers.to_dict(orient='records')})
 
 
+@app.route('/api/manager_roster', methods=['GET'])
+def get_manager_roster():
+    """Returns the complete fleet driver roster from a Manager's Operational POV."""
+    roster = solver.get_manager_fleet_roster()
+    return jsonify(roster)
+
+
+
 @app.route('/api/haulers', methods=['GET'])
 def get_haulers():
     return jsonify({'haulers': solver.df_haulers.to_dict(orient='records')})

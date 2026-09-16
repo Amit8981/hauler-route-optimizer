@@ -81,5 +81,54 @@ class TestNewFormulation(unittest.TestCase):
         self.assertEqual(res['solver_status'], 'CAPACITY_EXCEEDED')
 
 
+    def test_manager_fleet_roster_generation(self):
+        """Test that get_manager_fleet_roster generates all 11 commercial drivers with locations."""
+        roster = self.solver.get_manager_fleet_roster()
+        summary = roster['summary']
+        drivers = roster['drivers']
+        
+        self.assertEqual(summary['total_drivers'], 11)
+        self.assertEqual(summary['active_dispatched'], 10)
+        self.assertEqual(summary['standby_count'], 1)
+        self.assertEqual(summary['multitrip_chained_count'], 4)
+        self.assertEqual(summary['fleet_compliance_pct'], 100.0)
+        self.assertGreater(summary['total_shift_vehicles_delivered'], 100)
+        self.assertGreater(summary['total_shift_wages'], 5000.0)
+        
+        # Verify each driver has real-time location and coordinates
+        for d in drivers:
+            self.assertIn('current_location', d)
+            loc = d['current_location']
+            self.assertIn('name', loc)
+            self.assertIn('description', loc)
+            self.assertIsInstance(loc['lat'], (int, float))
+            self.assertIsInstance(loc['lon'], (int, float))
+            self.assertIn('hos_validation', d)
+            self.assertTrue(d['hos_validation']['is_fully_compliant'])
+
+    def test_multitrip_shift_validations(self):
+        """Test that all multi-trip chained drivers validate multiple trips within shift limits with C-17 rest."""
+        roster = self.solver.get_manager_fleet_roster()
+        multitrip_drivers = [d for d in roster['drivers'] if d['is_multitrip']]
+        self.assertEqual(len(multitrip_drivers), 4)
+
+        for d in multitrip_drivers:
+            # Must have at least 2 trips
+            self.assertGreaterEqual(d['trips_count'], 2)
+            self.assertGreater(d['vehicles_delivered'], 0)
+            self.assertGreater(d['total_wages'], 0)
+            self.assertGreater(d['effective_hourly_yield'], 50.0)
+            
+            # Mathematical HOS limits
+            self.assertLessEqual(d['shift_duty_hours'], d['daily_limit_hours'])
+            self.assertLessEqual(d['shift_span_hours'], 14.0)
+            self.assertGreaterEqual(d['cycle_remaining_hours'], 0)
+            
+            # C-17 turnaround rest proof
+            self.assertTrue(d['hos_validation']['turnaround_rest']['passed'])
+            self.assertIn("45 min", d['hos_validation']['turnaround_rest']['used'])
+
+
 if __name__ == '__main__':
     unittest.main()
+

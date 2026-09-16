@@ -81,11 +81,16 @@ for idx, row in solver.df_loads.iterrows():
         }
     }
 
-# Pre-solve multi-trip shift tour (Driver 7 SoCal performing 3 short Mira Loma trips in one AM shift)
-multi_trip_res = solver.solve_multitrip_driver_shift("DRV_07", [244861, 188377, 188384], shift_start_mins=360, post_trip_rest_mins=45)
+# Pre-solve multi-trip shift tour (Driver 7 SoCal performing short Mira Loma trips in AM shift)
+multi_trip_res = solver.solve_multitrip_driver_shift("DRV_07", [244861, 188384], shift_start_mins=360, post_trip_rest_mins=45)
 data_bundle['multitrip_shifts']['DRV_07'] = multi_trip_res
+
+# Export complete Manager Fleet Roster with location tracking and multi-trip shift validations
+print("Generating complete Manager Fleet Roster with multi-trip validations...")
+data_bundle['manager_roster'] = solver.get_manager_fleet_roster()
 
 with open('data/embedded_data.json', 'w') as f:
     json.dump(data_bundle, f)
 
 print("Exported updated embedded_data.json successfully! Total loads solved:", len(data_bundle['solutions']))
+
