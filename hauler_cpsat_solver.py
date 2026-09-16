@@ -365,16 +365,17 @@ class HaulerCPSATSolver:
                                 model.Add(Handover[k] >= x[j, k, l1] + x[k, m, l2] - 1)
 
         # C-12: Individual Driver Time Limits
-        # (a) Daily 11-Hour Cap (660 mins)
-        # (b) Rolling 70-Hour / 8-Day Cap (4200 mins)
+        # Respects driver's regulatory service rule (e.g. 8-Day/70h, 7-Day/60h, CA 8-Day/80h, Canada Cycle 1)
         for l in range(num_drivers):
             driver_rec = R[l]
             weekly_used = float(driver_rec.get('weekly_hours_used', 35.0))
-            weekly_cap = float(driver_rec.get('weekly_cap_hours', 70.0))
-            remaining_weekly_mins = max(0, int((weekly_cap - weekly_used) * 60))
+            cycle_cap = float(driver_rec.get('cycle_cap_hours', driver_rec.get('weekly_cap_hours', 70.0)))
+            daily_limit_mins = int(driver_rec.get('daily_limit_mins', max_driver_duty_mins))
+            remaining_cycle_mins = max(0, int((cycle_cap - weekly_used) * 60))
             
-            # Effective ceiling is min of 11h daily cap and remaining weekly cap
-            effective_driver_cap_mins = min(max_driver_duty_mins, remaining_weekly_mins)
+            # Effective ceiling is min of driver's daily statutory limit and remaining cycle cap
+            driver_daily_cap = min(daily_limit_mins, max_driver_duty_mins)
+            effective_driver_cap_mins = min(driver_daily_cap, remaining_cycle_mins)
 
             driver_duty_terms = []
             for j, k in arcs:
@@ -464,8 +465,14 @@ class HaulerCPSATSolver:
                 'total_duty_mins': 0, 
                 'legs': [],
                 'shift_type': R[l].get('shift_type', 'AM'),
+                'service_rule': R[l].get('service_rule', '8-Day / 70-Hour FMCSA'),
+                'cycle_cap_hours': float(R[l].get('cycle_cap_hours', R[l].get('weekly_cap_hours', 70.0))),
+                'weekly_cap_hours': float(R[l].get('weekly_cap_hours', R[l].get('cycle_cap_hours', 70.0))),
                 'weekly_hours_used': float(R[l].get('weekly_hours_used', 35.0)),
-                'weekly_cap_hours': float(R[l].get('weekly_cap_hours', 70.0))
+                'rate_per_vehicle': float(R[l].get('rate_per_vehicle', 45.0)),
+                'stop_drop_fee': float(R[l].get('stop_drop_fee', 20.0)),
+                'cycle_vehicles_delivered_prior': int(R[l].get('cycle_vehicles_delivered', 35)),
+                'target_cycle_vehicles': int(R[l].get('target_cycle_vehicles', 60))
             } 
             for l in range(num_drivers)
         }
@@ -538,20 +545,67 @@ class HaulerCPSATSolver:
             if rec['total_duty_mins'] > 0:
                 rec['total_duty_hours'] = round(rec['total_duty_mins'] / 60.0, 2)
                 rec['driving_hours'] = round(rec['driving_mins'] / 60.0, 2)
-                rec['within_11hr_limit'] = bool(rec['total_duty_mins'] <= max_driver_duty_mins)
-                rec['weekly_remaining_hours'] = round(rec['weekly_cap_hours'] - rec['weekly_hours_used'] - rec['total_duty_hours'], 2)
+                daily_limit_m = int(rec['driver'].get('daily_limit_mins', max_driver_duty_mins))
+                rec['daily_limit_hours'] = round(daily_limit_m / 60.0, 1)
+                rec['within_11hr_limit'] = bool(rec['total_duty_mins'] <= daily_limit_m)
+                rec['within_daily_limit'] = rec['within_11hr_limit']
+                rec['weekly_remaining_hours'] = round(rec['cycle_cap_hours'] - rec['weekly_hours_used'] - rec['total_duty_hours'], 2)
                 rec['within_70hr_limit'] = bool(rec['weekly_remaining_hours'] >= 0)
+                rec['within_cycle_limit'] = bool(rec['weekly_remaining_hours'] >= 0)
                 active_drivers.append(rec)
+
+        # Vehicle delivery attribution and per-vehicle piece-rate compensation
+        if len(active_drivers) == 1:
+            d = active_drivers[0]
+            d['vehicles_delivered'] = total_cargo_units
+            d['stop_drops_count'] = len(dealers)
+            d['piece_rate_pay'] = round(d['vehicles_delivered'] * d['rate_per_vehicle'], 2)
+            d['drop_fees_pay'] = round(d['stop_drops_count'] * d['stop_drop_fee'], 2)
+            d['total_wages'] = round(d['piece_rate_pay'] + d['drop_fees_pay'], 2)
+            d['effective_hourly_rate'] = round(d['total_wages'] / max(0.25, d['total_duty_hours']), 2)
+            d['cycle_vehicles_total'] = d['cycle_vehicles_delivered_prior'] + d['vehicles_delivered']
+            d['cycle_hours_total'] = round(d['weekly_hours_used'] + d['total_duty_hours'], 2)
+            d['cycle_velocity'] = round(d['cycle_vehicles_total'] / max(1.0, d['cycle_hours_total']), 2)
+            d['cycle_target_pct'] = round(min(100.0, (d['cycle_vehicles_total'] / max(1, d['target_cycle_vehicles'])) * 100.0), 1)
+        elif len(active_drivers) >= 2:
+            # 2-Driver Interstate Relay
+            lead_d = active_drivers[0]
+            relief_d = active_drivers[1]
+            
+            # Lead driver conveys vehicles outbound to certified hub
+            lead_d['vehicles_delivered'] = total_cargo_units // 2
+            lead_d['stop_drops_count'] = 0
+            lead_d['piece_rate_pay'] = round(total_cargo_units * (lead_d['rate_per_vehicle'] * 0.5), 2)
+            lead_d['drop_fees_pay'] = 0.0
+            lead_d['total_wages'] = lead_d['piece_rate_pay']
+            lead_d['effective_hourly_rate'] = round(lead_d['total_wages'] / max(0.25, lead_d['total_duty_hours']), 2)
+            lead_d['cycle_vehicles_total'] = lead_d['cycle_vehicles_delivered_prior'] + lead_d['vehicles_delivered']
+            lead_d['cycle_hours_total'] = round(lead_d['weekly_hours_used'] + lead_d['total_duty_hours'], 2)
+            lead_d['cycle_velocity'] = round(lead_d['cycle_vehicles_total'] / max(1.0, lead_d['cycle_hours_total']), 2)
+            lead_d['cycle_target_pct'] = round(min(100.0, (lead_d['cycle_vehicles_total'] / max(1, lead_d['target_cycle_vehicles'])) * 100.0), 1)
+
+            # Relief driver handles customer dealership drops and returns to depot
+            relief_d['vehicles_delivered'] = total_cargo_units - (total_cargo_units // 2)
+            relief_d['stop_drops_count'] = len(dealers)
+            relief_d['piece_rate_pay'] = round(total_cargo_units * (relief_d['rate_per_vehicle'] * 0.5), 2)
+            relief_d['drop_fees_pay'] = round(relief_d['stop_drops_count'] * relief_d['stop_drop_fee'], 2)
+            relief_d['total_wages'] = round(relief_d['piece_rate_pay'] + relief_d['drop_fees_pay'], 2)
+            relief_d['effective_hourly_rate'] = round(relief_d['total_wages'] / max(0.25, relief_d['total_duty_hours']), 2)
+            relief_d['cycle_vehicles_total'] = relief_d['cycle_vehicles_delivered_prior'] + relief_d['vehicles_delivered']
+            relief_d['cycle_hours_total'] = round(relief_d['weekly_hours_used'] + relief_d['total_duty_hours'], 2)
+            relief_d['cycle_velocity'] = round(relief_d['cycle_vehicles_total'] / max(1.0, relief_d['cycle_hours_total']), 2)
+            relief_d['cycle_target_pct'] = round(min(100.0, (relief_d['cycle_vehicles_total'] / max(1, relief_d['target_cycle_vehicles'])) * 100.0), 1)
 
         overall_trip_duration_mins = int(solver.Value(T[depot_end])) - trip_start_mins
         overall_trip_duration_hours = round(overall_trip_duration_mins / 60.0, 2)
         
-        # Financial estimates: Unified Flat Driver Wage Rate ($35.00/hour)
+        # Financial estimates: Per-Vehicle Piece-Rate Model with Stop Fees
         total_driver_duty_hours = sum(d['total_duty_hours'] for d in active_drivers)
         hauler_transport_cost = round(total_distance * 2.10, 2)
-        driver_wages_cost = round(total_driver_duty_hours * driver_hourly_rate, 2)
+        driver_wages_cost = round(sum(d.get('total_wages', round(d['total_duty_hours'] * driver_hourly_rate, 2)) for d in active_drivers), 2)
         handover_cost = sum(1 for leg in legs_output if leg['handover_at_dest']) * 65.0
         total_trip_cost = round(hauler_transport_cost + driver_wages_cost + handover_cost, 2)
+        driver_flat_hourly_comparison = round(total_driver_duty_hours * driver_hourly_rate, 2)
 
         # Trip Classification & Attributes (Short / Medium / Long Trip)
         handovers_count = sum(1 for leg in legs_output if leg['handover_at_dest'])
@@ -644,6 +698,8 @@ class HaulerCPSATSolver:
             'cost_breakdown': {
                 'hauler_transport_cost': hauler_transport_cost,
                 'driver_wages_cost': driver_wages_cost,
+                'driver_flat_hourly_comparison': driver_flat_hourly_comparison,
+                'wage_model': 'Per-Vehicle Delivered + Stop Drop Fees (Cycle Performance Model)',
                 'handover_cost': handover_cost,
                 'total_trip_cost': total_trip_cost
             },
@@ -1088,13 +1144,15 @@ class HaulerCPSATSolver:
         for l in range(num_drivers):
             driver_rec = R[l]
             weekly_used = float(driver_rec.get('weekly_hours_used', 35.0))
-            weekly_cap = float(driver_rec.get('weekly_cap_hours', 70.0))
-            remaining_weekly_mins = max(0, int((weekly_cap - weekly_used) * 60))
+            cycle_cap = float(driver_rec.get('cycle_cap_hours', driver_rec.get('weekly_cap_hours', 70.0)))
+            daily_limit_mins = int(driver_rec.get('daily_limit_mins', max_driver_duty_mins))
+            remaining_cycle_mins = max(0, int((cycle_cap - weekly_used) * 60))
             
+            driver_daily_cap = min(daily_limit_mins, max_driver_duty_mins)
             if enforce_weekly_cap:
-                effective_cap = min(max_driver_duty_mins, remaining_weekly_mins)
+                effective_cap = min(driver_daily_cap, remaining_cycle_mins)
             else:
-                effective_cap = max_driver_duty_mins
+                effective_cap = driver_daily_cap
                 
             driver_duty_terms = []
             for j, k in arcs:
@@ -1262,9 +1320,14 @@ class HaulerCPSATSolver:
                     
             duty_h = round(duty_mins / 60.0, 2)
             driving_h = round(driving_mins / 60.0, 2)
+            daily_limit_m = int(d_rec.get('daily_limit_mins', max_driver_duty_mins))
+            daily_limit_h = round(daily_limit_m / 60.0, 1)
+            service_rule = d_rec.get('service_rule', '8-Day / 70-Hour FMCSA')
+            cycle_cap = float(d_rec.get('cycle_cap_hours', d_rec.get('weekly_cap_hours', 70.0)))
             weekly_used = float(d_rec.get('weekly_hours_used', 35.0))
-            weekly_cap = float(d_rec.get('weekly_cap_hours', 70.0))
-            rem_h = round(weekly_cap - weekly_used - duty_h, 2)
+            rem_h = round(cycle_cap - weekly_used - duty_h, 2)
+            rate_per_veh = float(d_rec.get('rate_per_vehicle', 45.0))
+            drop_fee = float(d_rec.get('stop_drop_fee', 20.0))
             
             active_drivers.append({
                 'driver': d_rec,
@@ -1272,17 +1335,65 @@ class HaulerCPSATSolver:
                 'driver_name': d_rec['name'],
                 'home_vdc': d_rec.get('home_vdc', origin_code),
                 'shift_type': d_rec.get('shift_type', 'AM'),
+                'service_rule': service_rule,
                 'total_duty_hours': duty_h,
                 'total_driving_hours': driving_h,
+                'daily_limit_hours': daily_limit_h,
                 'miles_driven': round(miles_driven, 1),
-                'within_11hr_limit': bool(duty_h <= 11.0),
+                'within_11hr_limit': bool(duty_mins <= daily_limit_m),
+                'within_daily_limit': bool(duty_mins <= daily_limit_m),
                 'weekly_hours_used': weekly_used,
-                'weekly_cap_hours': weekly_cap,
+                'weekly_cap_hours': cycle_cap,
+                'cycle_cap_hours': cycle_cap,
                 'weekly_remaining_hours': rem_h,
-                'within_70hr_limit': bool(rem_h >= 0)
+                'within_70hr_limit': bool(rem_h >= 0),
+                'within_cycle_limit': bool(rem_h >= 0),
+                'rate_per_vehicle': rate_per_veh,
+                'stop_drop_fee': drop_fee,
+                'cycle_vehicles_delivered_prior': int(d_rec.get('cycle_vehicles_delivered', 35)),
+                'target_cycle_vehicles': int(d_rec.get('target_cycle_vehicles', 60))
             })
             
         num_drivers_needed = len(active_drivers)
+
+        # Vehicle delivery attribution and per-vehicle piece-rate compensation
+        if len(active_drivers) == 1:
+            d = active_drivers[0]
+            d['vehicles_delivered'] = cargo_count
+            d['stop_drops_count'] = len(dealers_info)
+            d['piece_rate_pay'] = round(d['vehicles_delivered'] * d['rate_per_vehicle'], 2)
+            d['drop_fees_pay'] = round(d['stop_drops_count'] * d['stop_drop_fee'], 2)
+            d['total_wages'] = round(d['piece_rate_pay'] + d['drop_fees_pay'], 2)
+            d['effective_hourly_rate'] = round(d['total_wages'] / max(0.25, d['total_duty_hours']), 2)
+            d['cycle_vehicles_total'] = d['cycle_vehicles_delivered_prior'] + d['vehicles_delivered']
+            d['cycle_hours_total'] = round(d['weekly_hours_used'] + d['total_duty_hours'], 2)
+            d['cycle_velocity'] = round(d['cycle_vehicles_total'] / max(1.0, d['cycle_hours_total']), 2)
+            d['cycle_target_pct'] = round(min(100.0, (d['cycle_vehicles_total'] / max(1, d['target_cycle_vehicles'])) * 100.0), 1)
+        elif len(active_drivers) >= 2:
+            lead_d = active_drivers[0]
+            relief_d = active_drivers[1]
+            
+            lead_d['vehicles_delivered'] = cargo_count // 2
+            lead_d['stop_drops_count'] = 0
+            lead_d['piece_rate_pay'] = round(cargo_count * (lead_d['rate_per_vehicle'] * 0.5), 2)
+            lead_d['drop_fees_pay'] = 0.0
+            lead_d['total_wages'] = lead_d['piece_rate_pay']
+            lead_d['effective_hourly_rate'] = round(lead_d['total_wages'] / max(0.25, lead_d['total_duty_hours']), 2)
+            lead_d['cycle_vehicles_total'] = lead_d['cycle_vehicles_delivered_prior'] + lead_d['vehicles_delivered']
+            lead_d['cycle_hours_total'] = round(lead_d['weekly_hours_used'] + lead_d['total_duty_hours'], 2)
+            lead_d['cycle_velocity'] = round(lead_d['cycle_vehicles_total'] / max(1.0, lead_d['cycle_hours_total']), 2)
+            lead_d['cycle_target_pct'] = round(min(100.0, (lead_d['cycle_vehicles_total'] / max(1, lead_d['target_cycle_vehicles'])) * 100.0), 1)
+
+            relief_d['vehicles_delivered'] = cargo_count - (cargo_count // 2)
+            relief_d['stop_drops_count'] = len(dealers_info)
+            relief_d['piece_rate_pay'] = round(cargo_count * (relief_d['rate_per_vehicle'] * 0.5), 2)
+            relief_d['drop_fees_pay'] = round(relief_d['stop_drops_count'] * relief_d['stop_drop_fee'], 2)
+            relief_d['total_wages'] = round(relief_d['piece_rate_pay'] + relief_d['drop_fees_pay'], 2)
+            relief_d['effective_hourly_rate'] = round(relief_d['total_wages'] / max(0.25, relief_d['total_duty_hours']), 2)
+            relief_d['cycle_vehicles_total'] = relief_d['cycle_vehicles_delivered_prior'] + relief_d['vehicles_delivered']
+            relief_d['cycle_hours_total'] = round(relief_d['weekly_hours_used'] + relief_d['total_duty_hours'], 2)
+            relief_d['cycle_velocity'] = round(relief_d['cycle_vehicles_total'] / max(1.0, relief_d['cycle_hours_total']), 2)
+            relief_d['cycle_target_pct'] = round(min(100.0, (relief_d['cycle_vehicles_total'] / max(1, relief_d['target_cycle_vehicles'])) * 100.0), 1)
         
         # Trip classification
         if overall_trip_duration_hours <= 5.0:
@@ -1319,7 +1430,8 @@ class HaulerCPSATSolver:
             
         # Costs
         total_duty_hours = sum(d['total_duty_hours'] for d in active_drivers)
-        driver_wages_cost = round(total_duty_hours * driver_hourly_rate, 2)
+        driver_wages_cost = round(sum(d.get('total_wages', round(d['total_duty_hours'] * driver_hourly_rate, 2)) for d in active_drivers), 2)
+        driver_flat_hourly_comparison = round(total_duty_hours * driver_hourly_rate, 2)
         hauler_transport_cost = round(total_distance * 1.85, 2)
         handover_cost = round(handovers_count * 150.0, 2)
         total_trip_cost = round(hauler_transport_cost + driver_wages_cost + handover_cost, 2)
@@ -1416,6 +1528,8 @@ class HaulerCPSATSolver:
             'cost_breakdown': {
                 'hauler_transport_cost': hauler_transport_cost,
                 'driver_wages_cost': driver_wages_cost,
+                'driver_flat_hourly_comparison': driver_flat_hourly_comparison,
+                'wage_model': 'Per-Vehicle Delivered + Stop Drop Fees (Cycle Performance Model)',
                 'handover_cost': handover_cost,
                 'total_trip_cost': total_trip_cost
             }

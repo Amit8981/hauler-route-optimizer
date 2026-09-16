@@ -1069,21 +1069,36 @@ html_content = f'''<!DOCTYPE html>
       if (!container) return;
 
       container.innerHTML = drivers.map((d, idx) => {{
-        const dailyDuty = d.total_duty_hours;
-        const drivingHours = d.driving_hours;
-        const dailyPct = Math.min(100, Math.round((dailyDuty / 11.0) * 100));
-        const isDailyOver = dailyDuty > 11.0;
+        const dailyDuty = Number(d.total_duty_hours || 0);
+        const drivingHours = Number(d.driving_hours || 0);
+        const dailyLimit = Number(d.daily_limit_hours || (d.daily_limit_mins ? (d.daily_limit_mins / 60.0).toFixed(1) : 11.0));
+        const dailyPct = Math.min(100, Math.round((dailyDuty / dailyLimit) * 100));
+        const isDailyOver = dailyDuty > dailyLimit;
         const dailyBarColor = isDailyOver ? 'bg-red-500' : dailyPct > 80 ? 'bg-amber-500' : 'bg-emerald-500';
 
+        const serviceRule = d.service_rule || d.driver?.service_rule || '8-Day / 70-Hour FMCSA';
+        const cycleCap = Number(d.cycle_cap_hours || d.weekly_cap_hours || 70.0);
         const weeklyUsed = Number(d.weekly_hours_used || 35.0);
         const weeklyTotal = Number((weeklyUsed + dailyDuty).toFixed(2));
-        const weeklyPct = Math.min(100, Math.round((weeklyTotal / 70.0) * 100));
-        const isWeeklyOver = weeklyTotal > 70.0;
+        const weeklyPct = Math.min(100, Math.round((weeklyTotal / cycleCap) * 100));
+        const isWeeklyOver = weeklyTotal > cycleCap;
         const weeklyBarColor = isWeeklyOver ? 'bg-red-500' : weeklyPct > 80 ? 'bg-amber-500' : 'bg-sky-500';
 
         const shiftBadge = (d.shift_type === 'PM' || d.driver?.shift_type === 'PM')
           ? '<span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-mono">🌙 PM Shift</span>'
           : '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-mono">☀️ AM Shift</span>';
+
+        const vehDelivered = Number(d.vehicles_delivered != null ? d.vehicles_delivered : (d.total_cargo_units || 8));
+        const ratePerVeh = Number(d.rate_per_vehicle || d.driver?.rate_per_vehicle || 45.0);
+        const dropFee = Number(d.stop_drop_fee || d.driver?.stop_drop_fee || 20.0);
+        const stopDrops = Number(d.stop_drops_count || 1);
+        const totalWages = Number(d.total_wages || ((vehDelivered * ratePerVeh) + (stopDrops * dropFee))).toFixed(2);
+        const effectiveRate = Number(d.effective_hourly_rate || (Number(totalWages) / Math.max(0.25, dailyDuty))).toFixed(2);
+
+        const cycleVehTotal = Number(d.cycle_vehicles_total || (d.cycle_vehicles_delivered_prior || 35) + vehDelivered);
+        const targetVeh = Number(d.target_cycle_vehicles || d.driver?.target_cycle_vehicles || 60);
+        const cyclePct = Math.min(100, Math.round((cycleVehTotal / targetVeh) * 100));
+        const cycleVelocity = Number(d.cycle_velocity || (cycleVehTotal / Math.max(1.0, weeklyTotal))).toFixed(2);
 
         return `
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-3">
@@ -1091,39 +1106,70 @@ html_content = f'''<!DOCTYPE html>
               <div class="flex items-center space-x-2">
                 <span class="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center text-[10px]">D${{idx + 1}}</span>
                 <div>
-                  <span class="font-semibold text-slate-200">${{d.driver.name}}</span>
-                  <span class="text-[10px] text-slate-400 font-mono ml-1.5">(${{d.driver.driver_id}})</span>
+                  <span class="font-semibold text-slate-200">${{d.driver?.name || d.driver_name}}</span>
+                  <span class="text-[10px] text-slate-400 font-mono ml-1.5">(${{d.driver?.driver_id || d.driver_id}})</span>
                 </div>
               </div>
               <div class="flex items-center space-x-2">
                 ${{shiftBadge}}
-                <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-emerald-400">$35/hr Flat</span>
+                <span class="px-2 py-0.5 rounded bg-purple-500/20 text-[10px] font-mono text-purple-300 font-bold border border-purple-500/30">${{serviceRule}}</span>
               </div>
             </div>
 
-            <!-- Daily 11h Progress Bar -->
+            <!-- Per-Vehicle Delivered Compensation Card -->
+            <div class="p-2.5 bg-slate-950/70 border border-slate-800 rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center space-x-2">
+                <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
+                  <i class="fa-solid fa-car"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-white text-[11px]">${{vehDelivered}} Vehicles Delivered &bull; ${{stopDrops}} Drops</div>
+                  <div class="text-[10px] text-slate-400 font-mono">$${{ratePerVeh}}/car + $${{dropFee}}/stop fee</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-emerald-400 font-bold font-mono text-xs">$${{totalWages}} Trip Pay</div>
+                <div class="text-[10px] text-slate-400 font-mono">Effective: <span class="text-emerald-300 font-bold">$${{effectiveRate}}/hr</span></div>
+              </div>
+            </div>
+
+            <!-- Daily Duty Progress Bar -->
             <div class="space-y-1">
               <div class="flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">Daily Duty (C-12a):</span>
-                <span class="font-mono font-bold ${{isDailyOver ? 'text-red-400' : 'text-emerald-400'}}">${{dailyDuty}}h / 11.0h max</span>
+                <span class="text-slate-400">Daily Shift Duty:</span>
+                <span class="font-mono font-bold ${{isDailyOver ? 'text-red-400' : 'text-emerald-400'}}">${{dailyDuty}}h / ${{dailyLimit}}h max</span>
               </div>
               <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
                 <div class="${{dailyBarColor}} h-full transition-all duration-500" style="width: ${{dailyPct}}%"></div>
               </div>
             </div>
 
-            <!-- Weekly 70h Rolling Progress Bar -->
+            <!-- Cycle HOS Progress Bar -->
             <div class="space-y-1">
               <div class="flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">Weekly HOS 8-Day Cap (C-12b):</span>
-                <span class="font-mono text-slate-300">${{weeklyTotal}}h / 70.0h</span>
+                <span class="text-slate-400">Cycle Duty Clock (${{serviceRule}}):</span>
+                <span class="font-mono text-slate-300">${{weeklyTotal}}h / ${{cycleCap}}h</span>
               </div>
               <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
                 <div class="${{weeklyBarColor}} h-full transition-all duration-500" style="width: ${{weeklyPct}}%"></div>
               </div>
             </div>
 
-            <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800/60">
+            <!-- Cycle Vehicle Delivery Throughput & Velocity -->
+            <div class="space-y-1 pt-1 border-t border-slate-800/60">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-slate-400 flex items-center space-x-1">
+                  <i class="fa-solid fa-chart-line text-sky-400 text-[10px]"></i>
+                  <span>Cycle Vehicle Throughput:</span>
+                </span>
+                <span class="font-mono text-sky-300 font-bold">${{cycleVehTotal}} / ${{targetVeh}} cars (${{cycleVelocity}} cars/duty hr)</span>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-sky-500 to-emerald-400 h-full transition-all duration-500" style="width: ${{cyclePct}}%"></div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1">
               <span>Drive: <strong class="text-slate-300 font-mono">${{drivingHours}}h</strong> &bull; Service: <strong class="text-slate-300 font-mono">${{(dailyDuty - drivingHours).toFixed(2)}}h</strong></span>
               <span class="px-2 py-0.5 rounded font-bold ${{isDailyOver || isWeeklyOver ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'}}">
                 ${{isDailyOver || isWeeklyOver ? 'HOS VIOLATION' : 'COMPLIANT'}}

@@ -710,7 +710,8 @@ html_content = f'''<!DOCTYPE html>
       tbody.innerHTML = '';
 
       drivers.forEach((d, idx) => {{
-        const rem = Math.max(0, (parseFloat(d.weekly_cap_hours) - parseFloat(d.weekly_hours_used))).toFixed(1);
+        const cycleCap = parseFloat(d.cycle_cap_hours || d.weekly_cap_hours || 70.0);
+        const rem = Math.max(0, (cycleCap - parseFloat(d.weekly_hours_used))).toFixed(1);
         const shiftBadge = d.shift_type === 'AM' 
           ? '<span class="px-1.5 py-0.5 rounded text-[10px] bg-sky-950 text-sky-300 border border-sky-800 font-mono">AM</span>'
           : '<span class="px-1.5 py-0.5 rounded text-[10px] bg-purple-950 text-purple-300 border border-purple-800 font-mono">PM</span>';
@@ -721,11 +722,14 @@ html_content = f'''<!DOCTYPE html>
           <td class="p-2">
             <input type="checkbox" name="pinnedDriver" value="${{d.driver_id}}" class="accent-emerald-500 rounded cursor-pointer" disabled>
           </td>
-          <td class="p-2 font-semibold text-slate-200">${{d.name}}</td>
-          <td class="p-2 font-mono text-slate-400">${{d.home_vdc}}</td>
+          <td class="p-2">
+            <div class="font-semibold text-slate-200 text-xs">${{d.name}}</div>
+            <div class="text-[9px] text-purple-300 font-mono">${{d.service_rule || '8-Day / 70-Hour FMCSA'}}</div>
+          </td>
+          <td class="p-2 font-mono text-slate-400 text-xs">${{d.home_vdc}}</td>
           <td class="p-2">${{shiftBadge}}</td>
-          <td class="p-2 text-right font-mono text-slate-300">${{parseFloat(d.weekly_hours_used).toFixed(1)}}h</td>
-          <td class="p-2 text-right font-mono text-emerald-400 font-semibold">${{rem}}h</td>
+          <td class="p-2 text-right font-mono text-xs text-slate-300">${{parseFloat(d.weekly_hours_used).toFixed(1)}}h / ${{cycleCap}}h</td>
+          <td class="p-2 text-right font-mono text-xs text-emerald-400 font-semibold">${{rem}}h</td>
         `;
         tbody.appendChild(row);
       }});
@@ -1481,29 +1485,58 @@ html_content = f'''<!DOCTYPE html>
       badge.innerText = `${{drivers.length}} Driver${{drivers.length > 1 ? 's Relay' : ' Direct'}}`;
 
       drivers.forEach(d => {{
-        const dutyPct = Math.min(100, Math.round((d.total_duty_hours / 11.0) * 100));
+        const dailyLimit = Number(d.daily_limit_hours || 11.0);
+        const dutyPct = Math.min(100, Math.round((d.total_duty_hours / dailyLimit) * 100));
+        const cycleCap = Number(d.cycle_cap_hours || 70.0);
         const rem = d.weekly_remaining_hours || 0;
+        const serviceRule = d.service_rule || '8-Day / 70-Hour FMCSA';
+        const vehDeliv = Number(d.vehicles_delivered || 0);
+        const ratePerVeh = Number(d.rate_per_vehicle || 45.0);
+        const totalWages = Number(d.total_wages || (d.total_duty_hours * 35).toFixed(2));
+        const effectiveRate = Number(d.effective_hourly_rate || (totalWages / Math.max(0.25, d.total_duty_hours)).toFixed(2));
+        const cycleVehTotal = Number(d.cycle_vehicles_total || d.cycle_vehicles_delivered_prior || 35);
+        const cycleVelocity = Number(d.cycle_velocity || 1.1);
+
         const card = document.createElement('div');
-        card.className = 'bg-slate-950/80 p-3 rounded-lg border border-slate-800 space-y-2';
+        card.className = 'bg-slate-950/80 p-3 rounded-lg border border-slate-800 space-y-2.5';
         card.innerHTML = `
           <div class="flex items-center justify-between">
             <span class="font-bold text-slate-200 font-sans">${{d.driver_name}}</span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30 font-semibold">
-              ${{d.total_duty_hours}}h Duty (${{d.miles_driven}} mi)
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold">
+              ${{serviceRule}}
             </span>
           </div>
+
+          <!-- Piece-Rate Compensation Mini-Card -->
+          <div class="p-2 rounded bg-slate-900 border border-slate-800 flex items-center justify-between text-[11px]">
+            <div>
+              <span class="text-white font-bold">${{vehDeliv}} Cars Delivered</span>
+              <span class="text-slate-400 font-mono block text-[10px]">$${{ratePerVeh}}/car + drops</span>
+            </div>
+            <div class="text-right">
+              <span class="text-emerald-400 font-bold font-mono">$${{totalWages}}</span>
+              <span class="text-slate-400 font-mono block text-[10px]">Eff: <strong class="text-emerald-300">$${{effectiveRate}}/h</strong></span>
+            </div>
+          </div>
+
           <div>
             <div class="flex justify-between text-[10px] text-slate-400 mb-1">
-              <span>Daily 11.0h Cap (C-12a):</span>
-              <span class="text-slate-300">${{d.total_duty_hours}}h / 11.0h</span>
+              <span>Daily Shift Duty:</span>
+              <span class="text-slate-300 font-mono">${{d.total_duty_hours}}h / ${{dailyLimit}}h max</span>
             </div>
             <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
               <div class="bg-emerald-500 h-1.5" style="width: ${{dutyPct}}%;"></div>
             </div>
           </div>
+
           <div class="flex justify-between text-[10px] text-slate-400 font-mono">
-            <span>Weekly Remaining:</span>
-            <span class="${{rem >= 0 ? 'text-emerald-400' : 'text-rose-400 font-bold'}}">${{rem}}h / 70.0h</span>
+            <span>Cycle Clock Remaining:</span>
+            <span class="${{rem >= 0 ? 'text-emerald-400' : 'text-rose-400 font-bold'}}">${{rem}}h / ${{cycleCap}}h</span>
+          </div>
+
+          <div class="flex justify-between text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-800/60">
+            <span>Cycle Velocity:</span>
+            <span class="text-sky-300 font-bold">${{cycleVehTotal}} cars (${{cycleVelocity}} cars/duty hr)</span>
           </div>
         `;
         container.appendChild(card);

@@ -1,12 +1,12 @@
-driver_id,name,home_vdc,shift_type,shift_start,shift_end,daily_limit_mins,weekly_hours_used,weekly_cap_hours,cost_per_hr,certified_haulers,is_available
-DRV_01,Marcus Vance (West Coast),LA,AM,360,1080,660,38.5,70.0,35.0,all,True
-DRV_02,Carlos Mendez (LB746),LA,AM,360,1080,660,42.0,70.0,35.0,all,True
-DRV_03,David Kim (BE14),SF,AM,360,1080,660,35.0,70.0,35.0,all,True
-DRV_04,Sarah Thornton (BE25),SF,PM,1080,1800,660,28.0,70.0,35.0,all,True
-DRV_05,Robert Rossi (LB764),LA,PM,1080,1800,660,45.5,70.0,35.0,all,True
-DRV_06,Nathan Cole (PNW),PT,AM,360,1080,660,32.0,70.0,35.0,all,True
-DRV_07,Brian Miller (SoCal),ML,AM,360,1080,660,25.0,70.0,35.0,all,True
-DRV_08,Leo Benitez (Relief 1),LA,AM,360,1080,660,40.0,70.0,35.0,all,True
-DRV_09,James Peterson (Relief 2),PT,PM,1080,1800,660,36.5,70.0,35.0,all,True
-DRV_10,Anthony Walker (Relief 3),SF,AM,360,1080,660,22.0,70.0,35.0,all,True
-DRV_11,Samuel Ramirez (Desert),04016,AM,360,1080,660,30.0,70.0,35.0,all,True
+driver_id,name,home_vdc,shift_type,shift_start,shift_end,daily_limit_mins,service_rule,cycle_cap_hours,weekly_cap_hours,weekly_hours_used,rate_per_vehicle,stop_drop_fee,cycle_vehicles_delivered,target_cycle_vehicles,cost_per_hr,certified_haulers,is_available
+DRV_01,Marcus Vance (West Coast),LA,AM,360,1080,660,8-Day / 70-Hour FMCSA,70.0,70.0,38.5,45.0,20.0,42,60,35.0,all,True
+DRV_02,Carlos Mendez (LB746),LA,AM,360,1080,660,7-Day / 60-Hour FMCSA,60.0,60.0,36.0,48.0,20.0,38,50,35.0,all,True
+DRV_03,David Kim (BE14),SF,AM,360,1080,720,8-Day / 80-Hour California Intrastate,80.0,80.0,42.0,45.0,25.0,48,70,35.0,all,True
+DRV_04,Sarah Thornton (BE25),SF,PM,1080,1800,660,8-Day / 70-Hour FMCSA,70.0,70.0,28.0,45.0,20.0,30,60,35.0,all,True
+DRV_05,Robert Rossi (LB764),LA,PM,1080,1800,660,8-Day / 70-Hour FMCSA,70.0,70.0,45.5,45.0,20.0,46,60,35.0,all,True
+DRV_06,Nathan Cole (PNW),PT,AM,360,1080,660,7-Day / 60-Hour FMCSA,60.0,60.0,32.0,48.0,20.0,35,50,35.0,all,True
+DRV_07,Brian Miller (SoCal),ML,AM,360,1080,720,8-Day / 80-Hour California Intrastate,80.0,80.0,25.0,45.0,25.0,36,70,35.0,all,True
+DRV_08,Leo Benitez (Relief 1),LA,AM,360,1080,660,8-Day / 70-Hour FMCSA,70.0,70.0,40.0,45.0,20.0,44,60,35.0,all,True
+DRV_09,James Peterson (Relief 2),PT,PM,1080,1800,780,7-Day / 70-Hour Canada Cycle 1,70.0,70.0,36.5,50.0,25.0,38,60,35.0,all,True
+DRV_10,Anthony Walker (Relief 3),SF,AM,360,1080,780,7-Day / 70-Hour Canada Cycle 1,70.0,70.0,22.0,50.0,25.0,25,60,35.0,all,True
+DRV_11,Samuel Ramirez (Desert),04016,AM,360,1080,840,Short-Haul 150 Air-Mile Exemption,70.0,70.0,30.0,42.0,15.0,40,65,35.0,all,True

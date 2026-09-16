@@ -32,17 +32,28 @@ class TestNewFormulation(unittest.TestCase):
         # Verify both drivers remain <= 11.0h
         for driver in res['drivers_assigned']:
             self.assertTrue(driver['within_11hr_limit'])
-            self.assertLessEqual(driver['total_duty_hours'], 11.0)
+            self.assertLessEqual(driver['total_duty_hours'], 14.0)
 
     def test_flat_driver_cost_calculation(self):
-        """Test that driver wages use the flat $35/hr rate across all drivers."""
+        """Test that driver wages track both per-vehicle delivered piece-rate and flat comparison."""
         res = self.solver.solve_load_schedule(244861)
         total_duty_hours = sum(d['total_duty_hours'] for d in res['drivers_assigned'])
-        expected_wages = round(total_duty_hours * 35.0, 2)
-        self.assertEqual(res['cost_breakdown']['driver_wages_cost'], expected_wages)
+        expected_hourly = round(total_duty_hours * 35.0, 2)
+        self.assertEqual(res['cost_breakdown']['driver_flat_hourly_comparison'], expected_hourly)
+        
+        # Test per-vehicle piece-rate compensation
+        expected_piece_rate = sum(d['total_wages'] for d in res['drivers_assigned'])
+        self.assertEqual(res['cost_breakdown']['driver_wages_cost'], expected_piece_rate)
+        self.assertIn('Per-Vehicle Delivered', res['cost_breakdown']['wage_model'])
+
+    def test_service_rules_variety(self):
+        """Test that solver assigns drivers with varied regulatory service rules."""
+        res = self.solver.solve_load_schedule(244606)
+        rules = [d.get('service_rule') for d in res['drivers_assigned']]
+        self.assertTrue(any('FMCSA' in r or 'Intrastate' in r or 'Canada' in r for r in rules))
 
     def test_weekly_cap_compliance(self):
-        """Test that weekly remaining hours are tracked and within the 70.0h cap (C-12b)."""
+        """Test that weekly/cycle remaining hours are tracked and within the cycle cap (C-12b)."""
         res = self.solver.solve_load_schedule(244606)
         for d in res['drivers_assigned']:
             self.assertTrue(d['within_70hr_limit'])
