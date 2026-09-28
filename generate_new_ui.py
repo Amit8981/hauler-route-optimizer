@@ -452,8 +452,37 @@ html_content = f'''<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Tab 1: Itinerary Table -->
-        <div id="itineraryTab" class="tab-content">
+        <!-- Tab 1: Itinerary Table & Delivery Audit -->
+        <div id="itineraryTab" class="tab-content space-y-4">
+          <!-- Partial Incomplete Trip Alert Banner (Dynamic via JS) -->
+          <div id="partialTripAlertBanner" class="hidden rounded-xl border border-amber-500/50 bg-amber-950/20 p-4 text-xs shadow-lg space-y-3">
+            <!-- Injected via JavaScript when is_partial_trip is true -->
+          </div>
+
+          <!-- Financial Breakdown & Cargo Delivery Audit Ribbon -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 text-xs font-mono">
+            <div class="space-y-1">
+              <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block"><i class="fa-solid fa-gas-pump text-sky-400 mr-1"></i> Fuel Run-Time Cost</span>
+              <span class="text-sky-300 font-bold text-sm" id="auditFuelCost">$0.00</span>
+              <span class="text-slate-500 text-[10px] block" id="auditFuelDetail">$0.85/min operating</span>
+            </div>
+            <div class="space-y-1">
+              <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block"><i class="fa-solid fa-money-bill-wave text-amber-400 mr-1"></i> Driver Wages (Piece-Rate)</span>
+              <span class="text-amber-300 font-bold text-sm" id="auditDriverWages">$0.00</span>
+              <span class="text-slate-500 text-[10px] block" id="auditWageDetail">$45/car + drop fees</span>
+            </div>
+            <div class="space-y-1">
+              <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block"><i class="fa-solid fa-chart-line text-emerald-400 mr-1"></i> Throughput Credit</span>
+              <span class="text-emerald-400 font-bold text-sm" id="auditThroughputCredit">-$0.00</span>
+              <span class="text-slate-500 text-[10px] block" id="auditThroughputDetail">-$150/delivered car</span>
+            </div>
+            <div class="space-y-1">
+              <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block"><i class="fa-solid fa-scale-balanced text-purple-400 mr-1"></i> Net Operating Margin</span>
+              <span class="text-purple-300 font-bold text-sm" id="auditNetMargin">$0.00</span>
+              <span class="text-slate-500 text-[10px] block" id="auditMarginDetail">vs $35/hr benchmark</span>
+            </div>
+          </div>
+
           <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs">
@@ -631,36 +660,46 @@ html_content = f'''<!DOCTYPE html>
             </div>
 
             <!-- KPI Metric Chips -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-2 border-t border-slate-800/80">
-              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 pt-2 border-t border-slate-800/80">
+              <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800">
                 <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Active Dispatched</div>
-                <div class="text-base font-bold text-sky-400 font-mono" id="mgrActiveDispatched">10 / 11</div>
-                <div class="text-[10px] text-slate-500">1 Standby at Depot</div>
+                <div class="text-base font-bold text-sky-400 font-mono" id="mgrActiveDispatched">11 / 11</div>
+                <div class="text-[10px] text-emerald-400 font-semibold">100% Pool Dispatched</div>
               </div>
-              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-amber-900/40 bg-amber-950/10">
+              <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Workload Equity (C-19)</div>
+                <div class="text-base font-bold text-emerald-400 font-mono" id="mgrWorkloadEquity">23.3% Spread</div>
+                <div class="text-[10px] text-slate-500">All 52%–70% Cap</div>
+              </div>
+              <div class="bg-slate-950/60 p-2 rounded-xl border border-amber-900/40 bg-amber-950/10">
                 <div class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">★ Multi-Trip Shifts</div>
                 <div class="text-base font-bold text-amber-300 font-mono" id="mgrMultiTripCount">4 Drivers</div>
-                <div class="text-[10px] text-amber-400/80">Chained 2–3 trips / shift</div>
+                <div class="text-[10px] text-amber-400/80">Chained 2–3 trips</div>
               </div>
-              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-indigo-900/40 bg-indigo-950/10">
+              <div class="bg-slate-950/60 p-2 rounded-xl border border-indigo-900/40 bg-indigo-950/10">
                 <div class="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">Interstate Relays</div>
                 <div class="text-base font-bold text-indigo-300 font-mono" id="mgrRelayCount">1 Team (3 Drivers)</div>
                 <div class="text-[10px] text-indigo-400/80">Lead & Relief Pairs</div>
               </div>
-              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+              <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800">
                 <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Shift Duty Total</div>
-                <div class="text-base font-bold text-slate-200 font-mono" id="mgrTotalDuty">67.1h</div>
-                <div class="text-[10px] text-slate-500">Across Dispatched Fleet</div>
+                <div class="text-base font-bold text-slate-200 font-mono" id="mgrTotalDuty">73.9h</div>
+                <div class="text-[10px] text-slate-500">Fleet Duty Hours</div>
               </div>
-              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+              <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800">
                 <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Vehicles Delivered</div>
-                <div class="text-base font-bold text-emerald-400 font-mono" id="mgrVehiclesDelivered">117 Units</div>
-                <div class="text-[10px] text-slate-500">Shift Vehicle Throughput</div>
+                <div class="text-base font-bold text-emerald-400 font-mono" id="mgrVehiclesDelivered">125 Units</div>
+                <div class="text-[10px] text-slate-500">Shift Throughput</div>
               </div>
-              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Piece-Rate Wage Pool</div>
-                <div class="text-base font-bold text-emerald-300 font-mono" id="mgrTotalWages">$6,018</div>
-                <div class="text-[10px] text-emerald-400/80">Avg Yield: $89.63/hr</div>
+              <div class="bg-slate-950/60 p-2 rounded-xl border border-rose-900/40 bg-rose-950/10">
+                <div class="text-[10px] uppercase font-bold text-rose-400 tracking-wider">Driver Deficit</div>
+                <div class="text-base font-bold text-rose-400 font-mono" id="mgrKpiDriverDeficit">9 Needed</div>
+                <div class="text-[10px] text-rose-400/80">12 Backlogged Loads</div>
+              </div>
+              <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Piece-Rate Wages</div>
+                <div class="text-base font-bold text-emerald-300 font-mono" id="mgrTotalWages">$6,418</div>
+                <div class="text-[10px] text-emerald-400/80">Yield: $86.84/hr</div>
               </div>
             </div>
           </div>
@@ -676,13 +715,13 @@ html_content = f'''<!DOCTYPE html>
                 ★ Multi-Trip Chained (4)
               </button>
               <button onclick="filterManagerRoster('DEDICATED')" class="mgr-filter-btn px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-emerald-300 hover:bg-slate-700 cursor-pointer transition">
-                Dedicated Single (3)
+                Dedicated Single (4)
               </button>
               <button onclick="filterManagerRoster('RELAY')" class="mgr-filter-btn px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-purple-300 hover:bg-slate-700 cursor-pointer transition">
                 Interstate Relay (3)
               </button>
-              <button onclick="filterManagerRoster('STANDBY')" class="mgr-filter-btn px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer transition">
-                Standby (1)
+              <button onclick="filterManagerRoster('STANDBY')" class="mgr-filter-btn px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 cursor-pointer transition">
+                Standby (0)
               </button>
             </div>
 
@@ -743,6 +782,89 @@ html_content = f'''<!DOCTYPE html>
               <!-- Terminal cards -->
             </div>
           </div>
+
+          <!-- Section 4: Fleet Driver Shortage & Backlogged Inventory Audit -->
+          <div class="bg-gradient-to-r from-slate-900 via-rose-950/20 to-slate-900 border border-rose-900/40 rounded-2xl p-5 shadow-xl space-y-4" id="fleetShortageSection">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-lg font-bold border border-rose-500/30 shadow-inner">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+                    Fleet Driver Shortage & Backlogged Inventory Audit
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 uppercase tracking-wider">Operational Fleet Deficit</span>
+                  </h4>
+                  <p class="text-xs text-slate-400">Real-World Capacity Analysis: Factory Yards Staged Loads vs Commercial Driver Resource Limits</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-950/60 border border-amber-800/60 text-amber-300 text-xs font-semibold">
+                  <i class="fa-solid fa-user-minus text-amber-400"></i>
+                  <span id="mgrDriverDeficitCount">9 Drivers Deficit</span>
+                </span>
+                <span class="px-3 py-1 rounded-lg bg-rose-950/60 border border-rose-800/60 text-rose-300 text-xs font-mono font-bold" id="mgrBackloggedInvValue">
+                  $4.40M Backlogged Inventory
+                </span>
+              </div>
+            </div>
+
+            <!-- Fleet Deficit Summary Banner -->
+            <div class="p-3.5 rounded-xl border border-rose-500/30 bg-rose-950/30 text-xs text-slate-300 flex items-start gap-3">
+              <i class="fa-solid fa-circle-info text-rose-400 mt-0.5 text-sm"></i>
+              <div class="flex-1 space-y-1">
+                <div class="font-semibold text-rose-200">
+                  Terminal Driver Resource Pool Fully Exhausted Under FMCSA Hours-of-Service Caps
+                </div>
+                <p class="text-slate-300 text-[11px] leading-relaxed">
+                  Today, <strong>28 total vehicle loads</strong> are staged and ready for pickup across 6 assembly factories and VDCs. With all <strong>11 active drivers</strong> dispatched at 100% duty utilization (zero standby, adhering to Constraint C-19 Workload Equity), the fleet safely delivered <strong>16 loads (125 vehicles)</strong>. Exactly <strong>12 loads (110 vehicles, ~$4.40M MSRP)</strong> remain staged at factory yards awaiting driver replenishment or next-day shift turnover. An additional <strong>9 certified commercial drivers</strong> are required to achieve 100% same-day dispatch clearance.
+                </p>
+              </div>
+            </div>
+
+            <!-- 2-Column Split: Terminal Backlog Table + Backlogged Loads Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <!-- Terminal Backlog Table -->
+              <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden">
+                <div class="p-3 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+                  <h5 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-warehouse text-sky-400"></i> Regional Terminal Backlog Breakdown
+                  </h5>
+                  <span class="text-[10px] font-mono text-slate-400">6 Assembly Terminals</span>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs font-mono">
+                    <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase border-b border-slate-800">
+                      <tr>
+                        <th class="py-2 px-3">Terminal</th>
+                        <th class="py-2 px-2 text-center">Ready</th>
+                        <th class="py-2 px-2 text-center">Dispatched</th>
+                        <th class="py-2 px-2 text-center text-rose-400">Backlog</th>
+                        <th class="py-2 px-2 text-center text-amber-300">Cars</th>
+                        <th class="py-2 px-2 text-center text-sky-300">Deficit</th>
+                      </tr>
+                    </thead>
+                    <tbody id="mgrTerminalBacklogTableBody" class="divide-y divide-slate-800/60 text-slate-300 text-[11px]">
+                      <!-- Injected via JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Backlogged Loads Staged at Factory Yards -->
+              <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
+                <div class="p-3 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+                  <h5 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-car-tunnel text-amber-400"></i> Staged Factory Yard Loads (Awaiting Drivers)
+                  </h5>
+                  <span class="text-[10px] font-mono text-amber-400 font-bold" id="mgrBacklogCountLabel">12 Backlogged Loads</span>
+                </div>
+                <div class="p-3 overflow-y-auto max-h-72 space-y-2" id="mgrBackloggedLoadsContainer">
+                  <!-- Injected via JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
 
@@ -752,7 +874,7 @@ html_content = f'''<!DOCTYPE html>
 
   </div>
 
-  <!-- Modal: Complete OR Formulation Reference (C-1 to C-18) -->
+  <!-- Modal: Complete OR Formulation Reference (C-1 to C-20 & Unified Objective) -->
   <div id="formulationModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[88vh] flex flex-col shadow-2xl">
       <div class="p-5 border-b border-slate-800 flex items-center justify-between">
@@ -761,8 +883,8 @@ html_content = f'''<!DOCTYPE html>
             <i class="fa-solid fa-book"></i>
           </div>
           <div>
-            <h3 class="font-bold text-sm text-white">Operations Research Formulation: Constraints C-1 through C-18</h3>
-            <p class="text-[11px] text-slate-400">Mathematical Specification for Finished Vehicle Logistics & Driver Assignment</p>
+            <h3 class="font-bold text-sm text-white">Operations Research Formulation: Constraints C-1 to C-20 & Objective Function</h3>
+            <p class="text-[11px] text-slate-400">Mathematical Specification for Vehicle Throughput Maximization, Driver Workload Equity & Resilient Soft-Coverage</p>
           </div>
         </div>
         <button onclick="hideFormulationModal()" class="text-slate-400 hover:text-white text-lg cursor-pointer">
@@ -770,6 +892,20 @@ html_content = f'''<!DOCTYPE html>
         </button>
       </div>
       <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300">
+        <!-- Unified Objective Function Highlight Card -->
+        <div class="p-3.5 bg-gradient-to-r from-sky-950/40 via-indigo-950/30 to-slate-950/60 border border-sky-500/40 rounded-xl space-y-1.5">
+          <div class="font-bold text-sky-300 flex items-center justify-between">
+            <span>Unified Objective Function: Transit Cost Minimization & Finished Vehicle Throughput Maximization</span>
+            <span class="px-2 py-0.5 rounded text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30">MINIMIZE Z</span>
+          </div>
+          <p class="font-mono text-emerald-300 text-[11px] leading-relaxed">
+            min Z = &sum; c_mile &middot; d_jk + &sum; c_fuel &middot; &tau;_jk + &sum; (c_unit_car - W_throughput) &middot; v_k + &sum; P_unserved &middot; u_k + &sum; c_handover &middot; h_k
+          </p>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Unifies transit fuel run-time consumption ($0.85/min &middot; &tau;_jk), mileage wear, and piece-rate driver compensation ($45/car &middot; v_k). With vehicle throughput incentive credit W_throughput = $150/car, the net marginal vehicle coefficient is ($45 - $150) = <strong>-$105/car delivered</strong>. Delivering more finished vehicles strictly minimizes the objective, aligning fleet throughput maximization with mathematical optimization.
+          </p>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
             <div class="font-semibold text-sky-400 mb-1">C-1 & C-2: Factory Departure & Same Return</div>
@@ -787,14 +923,14 @@ html_content = f'''<!DOCTYPE html>
             <p class="text-[11px] text-slate-400 mt-1">Exactly one driver is assigned to each active movement arc.</p>
           </div>
           <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
-            <div class="font-semibold text-sky-400 mb-1">C-10: Hauler Capacity</div>
-            <p class="font-mono text-pink-300">L_ij &le; Q_i</p>
-            <p class="text-[11px] text-slate-400 mt-1">Vehicle count and weight cannot exceed trailer payload limits.</p>
+            <div class="font-semibold text-sky-400 mb-1">C-10: Hauler Capacity & GVWR Limit</div>
+            <p class="font-mono text-pink-300">L_ij &le; Q_i &bull; GrossWeight &le; 80,000 lbs</p>
+            <p class="text-[11px] text-slate-400 mt-1">Vehicle count and weight cannot exceed trailer payload limits and Federal Bridge Formula GVWR.</p>
           </div>
           <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
-            <div class="font-semibold text-sky-400 mb-1">C-12(a): Daily 11-Hour Limit</div>
+            <div class="font-semibold text-sky-400 mb-1">C-12(a): Daily 11-Hour Limit (FMCSA)</div>
             <p class="font-mono text-amber-300">&sum; T_duty_ijk &middot; x_ijkl &le; 11 hours (660 min)</p>
-            <p class="text-[11px] text-slate-400 mt-1">Driver may not exceed 11 hours duty in any single shift.</p>
+            <p class="text-[11px] text-slate-400 mt-1">Driver may not exceed 11 hours duty in any single shift (or intrastate 12h/13h cap).</p>
           </div>
           <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
             <div class="font-semibold text-sky-400 mb-1">C-12(b): Rolling 70-Hour / 8-Day Limit</div>
@@ -809,7 +945,17 @@ html_content = f'''<!DOCTYPE html>
           <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
             <div class="font-semibold text-sky-400 mb-1">C-14 & C-17: Handover & Turnaround Rest</div>
             <p class="font-mono text-amber-300">h_k = 0 &rarr; no swap &bull; Start_next &ge; End_prev + T_rest</p>
-            <p class="text-[11px] text-slate-400 mt-1">45-min handover at certified hubs &bull; 45-min post-trip rest between trips.</p>
+            <p class="text-[11px] text-slate-400 mt-1">45-min handover at certified hubs &bull; 45-min post-trip turnaround rest between trips.</p>
+          </div>
+          <div class="p-3 bg-slate-950/80 border border-amber-900/50 rounded-lg bg-amber-950/10">
+            <div class="font-semibold text-amber-300 mb-1">C-19: Active Driver Workload Equity & Non-Idleness</div>
+            <p class="font-mono text-amber-200">z_l = 1, Duty_l &ge; 5.0h, max(U_l) - min(U_l) &le; 25%</p>
+            <p class="text-[11px] text-slate-400 mt-1">Eliminates standby drivers (0 idle in active pool). Enforces shift duty equity spread &le; 25% (duty spread &le; 2.32h).</p>
+          </div>
+          <div class="p-3 bg-slate-950/80 border border-rose-900/50 rounded-lg bg-rose-950/10">
+            <div class="font-semibold text-rose-300 mb-1">C-20: Resilient Soft-Coverage & Cargo Balance</div>
+            <p class="font-mono text-rose-200">&sum; x_jk = 1 - u_k, L_depot_end = &sum; q_k &middot; u_k, P_drop = $50,000</p>
+            <p class="text-[11px] text-slate-400 mt-1">Soft slack variable u_k &isin; {0, 1} allows dropping unserviceable stops under severe driver shortages; returned cargo is audited.</p>
           </div>
         </div>
       </div>
@@ -1161,33 +1307,116 @@ html_content = f'''<!DOCTYPE html>
         kpiTripTag.textContent = tripTag;
         kpiTripTag.className = `px-2 py-0.5 rounded text-xs font-bold border ${{tagColor}}`;
       }}
-      document.getElementById('kpiCoverageSub').textContent = '100% Load Covered';
-
-      document.getElementById('kpiDuration').textContent = `${{res.total_trip_duration_hours}} hrs`;
-      document.getElementById('kpiDrivingTime').textContent = `Driving: ${{res.total_travel_time_hours}}h`;
-      document.getElementById('kpiDistance').textContent = `${{res.total_distance_miles}} mi`;
+      const isPartial = Boolean(res.is_partial_trip);
+      const resLbs = res.total_cargo_weight_lbs ? res.total_cargo_weight_lbs : Math.round(Number(res.total_cargo_weight_kg || 0) * 2.20462);
       
-      const numDrivers = res.num_drivers_assigned;
-      document.getElementById('kpiDriversCount').textContent = `${{numDrivers}} ${{numDrivers === 1 ? 'Driver' : 'Drivers'}}`;
-      document.getElementById('kpi11hCompliance').textContent = numDrivers === 1 ? 'Single shift legal' : 'Multi-driver handover';
-
-      document.getElementById('kpiRestDuration').textContent = `${{restMins}} mins`;
-
-      if (handoverLeg) {{
-        document.getElementById('kpiHandoverLoc').textContent = `${{handoverLeg.to_name}} (${{handoverLeg.to_code}})`;
-        document.getElementById('kpiHandoverDuration').textContent = `${{handoverLeg.handover_duration_mins}} min buffer (C-14)`;
+      const capEl = document.getElementById('kpiCapacity');
+      const capSub = document.getElementById('kpiCargoWeight');
+      const covSub = document.getElementById('kpiCoverageSub');
+      
+      if (isPartial) {{
+        capEl.textContent = `${{res.total_delivered_units}} / ${{res.total_cargo_units}} Cars`;
+        capEl.className = 'text-lg font-bold font-mono text-amber-400';
+        capSub.textContent = `${{res.returned_cargo_units}} units returned to depot`;
+        capSub.className = 'text-[10px] text-amber-400 mt-1 font-semibold';
+        covSub.textContent = `${{res.completion_rate_pct}}% Cargo Covered`;
       }} else {{
-        document.getElementById('kpiHandoverLoc').textContent = 'None (Single Driver)';
-        document.getElementById('kpiHandoverDuration').textContent = 'Direct single-driver trip';
+        capEl.textContent = `${{res.total_cargo_units}} / ${{res.hauler_capacity}} Cars`;
+        capEl.className = 'text-lg font-bold font-mono text-emerald-400';
+        capSub.textContent = `${{resLbs.toLocaleString()}} lbs (100% Full)`;
+        capSub.className = 'text-[10px] text-emerald-400 mt-1 font-semibold';
+        covSub.textContent = '100% Load Covered';
       }}
 
-      const resLbs = res.total_cargo_weight_lbs ? res.total_cargo_weight_lbs : Math.round(Number(res.total_cargo_weight_kg || 0) * 2.20462);
-      document.getElementById('kpiCapacity').textContent = `${{res.total_cargo_units}} / ${{res.hauler_capacity}} Cars`;
-      document.getElementById('kpiCapacity').className = 'text-lg font-bold font-mono text-emerald-400';
-      document.getElementById('kpiCargoWeight').textContent = `${{resLbs.toLocaleString()}} lbs (100% Full)`;
+      // Update Partial Incomplete Trip Alert Banner in Tab 1
+      const partialBanner = document.getElementById('partialTripAlertBanner');
+      if (partialBanner) {{
+        if (isPartial) {{
+          partialBanner.classList.remove('hidden');
+          const droppedRows = (res.uncovered_locations || []).map(u => `
+            <tr class="border-t border-amber-900/40 text-[11px]">
+              <td class="py-2 px-2.5 font-bold text-amber-300 font-sans">${{u.dealer_name}} (${{u.dealer_id}})</td>
+              <td class="py-2 px-2 text-slate-300">${{u.city}}</td>
+              <td class="py-2 px-2 text-center font-bold text-rose-400 font-mono">${{u.units_undelivered}} cars</td>
+              <td class="py-2 px-2 text-rose-300">${{u.root_cause || 'HOS / Window limitation'}}</td>
+              <td class="py-2 px-2 text-sky-300">${{u.remedy || 'Re-dispatch on next shift'}}</td>
+            </tr>
+          `).join('');
 
+          partialBanner.innerHTML = `
+            <div class="flex items-start gap-3">
+              <div class="p-2 rounded-lg bg-amber-500/20 text-amber-400 text-lg">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div class="flex-1 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
+                      PARTIAL INCOMPLETE TRIP (${{res.completion_rate_pct}}% COVERAGE)
+                    </span>
+                    <span class="text-amber-200 font-semibold text-xs">Soft-Coverage Constraint C-20 Engaged</span>
+                  </div>
+                  <span class="text-[11px] font-mono text-slate-400">
+                    Trailer Return Cargo: <strong class="text-amber-300">${{res.returned_cargo_units}} cars returned to depot</strong>
+                  </span>
+                </div>
+                <p class="text-slate-300 leading-relaxed text-[11px]">
+                  Due to driver capacity limits or operating windows, <strong>${{res.total_undelivered_units}} of ${{res.total_cargo_units}} vehicles</strong> could not be delivered on this round trip. The solver preserved feasibility and avoided a hard infeasible dispatch rejection by dropping unserviceable stops and returning undelivered units back to the origin factory staging yard.
+                </p>
+                <div class="overflow-x-auto rounded-lg border border-amber-900/50 bg-slate-900/80 mt-2">
+                  <table class="w-full text-left text-xs">
+                    <thead class="bg-amber-950/40 text-amber-400 text-[10px] uppercase font-semibold">
+                      <tr>
+                        <th class="py-1.5 px-2.5">Dropped Dealership</th>
+                        <th class="py-1.5 px-2">City</th>
+                        <th class="py-1.5 px-2 text-center">Undelivered</th>
+                        <th class="py-1.5 px-2">Root Cause Diagnostic</th>
+                        <th class="py-1.5 px-2">Remedial Action</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-amber-900/30">
+                      ${{droppedRows}}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          `;
+        }} else {{
+          partialBanner.classList.add('hidden');
+        }}
+      }}
+
+      // Update Financial & Throughput Economics Breakdown Cards
       if (res.cost_breakdown) {{
-        document.getElementById('kpiTotalCost').textContent = `$${{res.cost_breakdown.total_trip_cost.toLocaleString()}}`;
+        const cb = res.cost_breakdown;
+        const fuelCost = Number(cb.fuel_transit_time_cost || 0);
+        const wageCost = Number(cb.driver_wages_cost || 0);
+        const throughputCredit = Number(cb.throughput_value_credit || 0);
+        const netMargin = Number(cb.net_delivery_margin || 0);
+        const totalCost = Number(cb.total_trip_cost || 0);
+
+        document.getElementById('kpiTotalCost').textContent = `$${{totalCost.toLocaleString(undefined, {{minimumFractionDigits: 2, maximumFractionDigits: 2}})}}`;
+
+        const fuelEl = document.getElementById('auditFuelCost');
+        if (fuelEl) fuelEl.textContent = `$${{fuelCost.toLocaleString(undefined, {{minimumFractionDigits: 2, maximumFractionDigits: 2}})}}`;
+        const fuelDetail = document.getElementById('auditFuelDetail');
+        if (fuelDetail) fuelDetail.textContent = `$0.85/min × ${{res.total_travel_time_mins || 0}} mins`;
+
+        const wageEl = document.getElementById('auditDriverWages');
+        if (wageEl) wageEl.textContent = `$${{wageCost.toLocaleString(undefined, {{minimumFractionDigits: 2, maximumFractionDigits: 2}})}}`;
+        const wageDetail = document.getElementById('auditWageDetail');
+        if (wageDetail) wageDetail.textContent = `$45/car × ${{res.total_delivered_units || res.total_cargo_units}} cars + drop fees`;
+
+        const credEl = document.getElementById('auditThroughputCredit');
+        if (credEl) credEl.textContent = `-$${{throughputCredit.toLocaleString(undefined, {{minimumFractionDigits: 2, maximumFractionDigits: 2}})}}`;
+        const credDetail = document.getElementById('auditThroughputDetail');
+        if (credDetail) credDetail.textContent = `-$150/delivered car throughput credit`;
+
+        const marginEl = document.getElementById('auditNetMargin');
+        if (marginEl) marginEl.textContent = `$${{netMargin.toLocaleString(undefined, {{minimumFractionDigits: 2, maximumFractionDigits: 2}})}}`;
+        const marginDetail = document.getElementById('auditMarginDetail');
+        if (marginDetail) marginDetail.textContent = `vs $${{Number(cb.driver_flat_hourly_comparison || 0).toFixed(0)}} flat benchmark`;
       }}
 
       // Update Rationale & Trip Attributes Banner
@@ -1858,17 +2087,21 @@ html_content = f'''<!DOCTYPE html>
 
       // Update Summary KPI Chips
       const activeEl = document.getElementById('mgrActiveDispatched');
-      if (activeEl) activeEl.innerText = `${{summary.active_dispatched || 10}} / ${{summary.total_drivers || 11}}`;
+      if (activeEl) activeEl.innerText = `${{summary.active_dispatched || 11}} / ${{summary.total_drivers || 11}}`;
+      const equityEl = document.getElementById('mgrWorkloadEquity');
+      if (equityEl) equityEl.innerText = `${{summary.c19_workload_equity_spread_pct || 23.3}}% Spread`;
       const mtEl = document.getElementById('mgrMultiTripCount');
       if (mtEl) mtEl.innerText = `${{summary.multitrip_chained_count || 4}} Drivers`;
       const relayEl = document.getElementById('mgrRelayCount');
       if (relayEl) relayEl.innerText = `${{summary.relay_teams_count || 1}} Team (3 Drivers)`;
       const dutyEl = document.getElementById('mgrTotalDuty');
-      if (dutyEl) dutyEl.innerText = `${{summary.total_shift_duty_hours || 67.1}}h`;
+      if (dutyEl) dutyEl.innerText = `${{summary.total_shift_duty_hours || 73.9}}h`;
       const vehEl = document.getElementById('mgrVehiclesDelivered');
-      if (vehEl) vehEl.innerText = `${{summary.total_shift_vehicles_delivered || 117}} Units`;
+      if (vehEl) vehEl.innerText = `${{summary.total_shift_vehicles_delivered || 125}} Units`;
+      const defEl = document.getElementById('mgrKpiDriverDeficit');
+      if (defEl) defEl.innerText = `${{rosterData.driver_shortage_analysis?.driver_deficit_count || 9}} Needed`;
       const wageEl = document.getElementById('mgrTotalWages');
-      if (wageEl) wageEl.innerText = `$${{Number(summary.total_shift_wages || 6018).toLocaleString()}}`;
+      if (wageEl) wageEl.innerText = `$${{Number(summary.total_shift_wages || 6418).toLocaleString()}}`;
 
       // Filter drivers
       const filtered = drivers.filter(d => {{
@@ -1910,6 +2143,66 @@ html_content = f'''<!DOCTYPE html>
 
       // Render Section 3: Terminal Geographic Distribution
       renderTerminalDistribution(drivers);
+
+      // Render Section 4: Fleet Driver Shortage & Backlogged Inventory Audit
+      renderFleetShortageSection(rosterData.driver_shortage_analysis);
+    }}
+
+    function renderFleetShortageSection(shortage) {{
+      if (!shortage) return;
+
+      const deficitCountEl = document.getElementById('mgrDriverDeficitCount');
+      if (deficitCountEl) deficitCountEl.innerText = `${{shortage.driver_deficit_count || 9}} Drivers Deficit`;
+
+      const invValEl = document.getElementById('mgrBackloggedInvValue');
+      if (invValEl) {{
+        const invMil = ((shortage.backlogged_inventory_value_usd || 4400000) / 1000000).toFixed(2);
+        invValEl.innerText = `$${{invMil}}M Backlogged Inventory`;
+      }}
+
+      const backlogLabel = document.getElementById('mgrBacklogCountLabel');
+      if (backlogLabel) backlogLabel.innerText = `${{shortage.backlogged_loads_count || 12}} Backlogged Loads (${{shortage.backlogged_vehicles_count || 110}} Cars)`;
+
+      // Render Terminal Backlog Breakdown Table
+      const tbBody = document.getElementById('mgrTerminalBacklogTableBody');
+      if (tbBody && shortage.terminal_breakdown) {{
+        tbBody.innerHTML = shortage.terminal_breakdown.map(t => `
+          <tr class="hover:bg-slate-900/60 transition">
+            <td class="py-2.5 px-3 font-semibold text-white font-sans">${{t.terminal}}</td>
+            <td class="py-2.5 px-2 text-center text-slate-300 font-bold">${{t.loads_ready}}</td>
+            <td class="py-2.5 px-2 text-center text-emerald-400 font-bold">${{t.loads_dispatched}}</td>
+            <td class="py-2.5 px-2 text-center text-rose-400 font-bold">${{t.backlogged_loads}}</td>
+            <td class="py-2.5 px-2 text-center text-amber-300">${{t.backlogged_cars}}</td>
+            <td class="py-2.5 px-2 text-center font-bold ${{t.driver_deficit > 0 ? 'text-rose-300' : 'text-slate-500'}}">${{t.driver_deficit > 0 ? '+' + t.driver_deficit : '0'}}</td>
+          </tr>
+        `).join('');
+      }}
+
+      // Render Backlogged Loads List
+      const loadsContainer = document.getElementById('mgrBackloggedLoadsContainer');
+      if (loadsContainer && shortage.backlogged_loads) {{
+        loadsContainer.innerHTML = shortage.backlogged_loads.map(b => `
+          <div class="bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs transition">
+            <div class="flex items-center space-x-3">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm font-bold font-mono">
+                <i class="fa-solid fa-car-side"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-white font-mono">Load #${{b.load_id}}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold">${{b.vehicles_count}} Cars</span>
+                  <span class="text-[10px] text-slate-400 font-sans">${{b.origin_name}} (${{b.origin_vdc}})</span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5 leading-snug">${{b.root_cause}}</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">BACKLOGGED</span>
+              <div class="text-[10px] text-slate-500 font-mono mt-0.5">Priority: ${{b.priority}}</div>
+            </div>
+          </div>
+        `).join('');
+      }}
     }}
 
     function renderMultiTripValidationCards(filteredDrivers) {{

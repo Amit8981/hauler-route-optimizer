@@ -536,6 +536,11 @@ html_content = f'''<!DOCTYPE html>
         </div>
       </div>
 
+      <!-- SOFT-COVERAGE PARTIAL TRIP AUDIT (Visible when dropped stops occur) -->
+      <div id="sandboxPartialAuditCard" class="hidden bg-slate-900 border border-amber-500/40 rounded-xl p-5 shadow-sm space-y-3">
+        <!-- Populated via JS when is_partial_trip is true -->
+      </div>
+
       <!-- CONSTRAINT COMPLIANCE PROOF MATRIX -->
       <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -1299,6 +1304,8 @@ html_content = f'''<!DOCTYPE html>
       const banner = document.getElementById('verdictBanner');
 
       if (res.status === 'INFEASIBLE') {{
+        const partialCard = document.getElementById('sandboxPartialAuditCard');
+        if (partialCard) partialCard.classList.add('hidden');
         banner.className = 'rounded-xl border border-rose-500/50 bg-rose-950/30 p-5 transition-all shadow-lg shadow-rose-950/20';
         banner.innerHTML = `
           <div class="flex items-start justify-between gap-4">
@@ -1325,26 +1332,84 @@ html_content = f'''<!DOCTYPE html>
       }}
 
       // FEASIBLE / OPTIMAL
+      const isPartial = Boolean(res.is_partial_trip);
+      const partialCard = document.getElementById('sandboxPartialAuditCard');
+      if (partialCard) {{
+        if (isPartial) {{
+          partialCard.classList.remove('hidden');
+          const droppedList = (res.uncovered_locations || []).map(u => `
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="p-2.5 font-bold text-amber-300 font-sans">${{u.dealer_name}} (${{u.dealer_id}})</td>
+              <td class="p-2.5 text-slate-300">${{u.city}}</td>
+              <td class="p-2.5 text-center font-bold text-rose-400 font-mono">${{u.units_undelivered}} cars</td>
+              <td class="p-2.5 text-rose-300">${{u.root_cause || 'HOS / Window limitation'}}</td>
+              <td class="p-2.5 text-sky-300">${{u.remedy || 'Re-dispatch on next shift'}}</td>
+            </tr>
+          `).join('');
+
+          partialCard.innerHTML = `
+            <div class="flex items-center justify-between border-b border-amber-900/50 pb-3">
+              <div class="flex items-center gap-2 text-sm font-bold text-amber-300">
+                <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+                <span>Soft-Coverage Delivery Audit: Dropped Stops & Returned Cargo Balance (C-20)</span>
+              </div>
+              <span class="text-xs px-2.5 py-0.5 rounded-full font-mono bg-amber-950 text-amber-300 border border-amber-800">
+                ${{res.completion_rate_pct}}% Cargo Delivered • ${{res.returned_cargo_units}} Cars Returned
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Under soft-coverage formulation (Constraint C-20), unserved stops were dropped to maintain mathematical feasibility under driver capacity or service window limitations. <strong>${{res.returned_cargo_units}} vehicles</strong> remain on the trailer and return securely to the origin depot (${{res.origin_vdc_name}}).
+            </p>
+            <div class="overflow-x-auto border border-amber-900/50 rounded-lg">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-amber-950/40 text-[11px] text-amber-400 uppercase tracking-wider">
+                  <tr>
+                    <th class="p-2.5">Dropped Dealership</th>
+                    <th class="p-2.5">City</th>
+                    <th class="p-2.5 text-center">Undelivered</th>
+                    <th class="p-2.5">Root Cause Diagnostic</th>
+                    <th class="p-2.5">Remedial Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-amber-900/30">
+                  ${{droppedList}}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }} else {{
+          partialCard.classList.add('hidden');
+        }}
+      }}
+
       const tagColors = res.trip_tag === 'LONG TRIP'
         ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
         : (res.trip_tag === 'MEDIUM TRIP' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40');
 
-      banner.className = 'rounded-xl border border-emerald-500/50 bg-emerald-950/25 p-5 transition-all shadow-lg shadow-emerald-950/20';
+      const bannerBorder = isPartial ? 'border-amber-500/50 bg-amber-950/25' : 'border-emerald-500/50 bg-emerald-950/25';
+      const bannerIcon = isPartial ? '<i class="fa-solid fa-triangle-exclamation"></i>' : '<i class="fa-solid fa-circle-check"></i>';
+      const iconColor = isPartial ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400';
+      const statusBadge = isPartial
+        ? `<span class="px-2.5 py-0.5 rounded text-xs font-bold font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">PARTIAL (${{res.completion_rate_pct}}% COVERED)</span>`
+        : `<span class="px-2.5 py-0.5 rounded text-xs font-bold font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${{res.status}}: ${{res.solver_status || 'OPTIMAL'}}</span>`;
+      const capacityText = isPartial
+        ? `<span class="text-xs font-mono text-amber-400 font-bold">${{res.total_delivered_units}} / ${{res.total_cargo_units}} Delivered (${{res.returned_cargo_units}} Returned)</span>`
+        : `<span class="text-xs font-mono text-emerald-400 font-bold">100% Full (${{res.total_cargo_units}} / ${{res.hauler_capacity}} Cars)</span>`;
+
+      banner.className = `rounded-xl border ${{bannerBorder}} p-5 transition-all shadow-lg`;
       banner.innerHTML = `
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div class="flex items-start gap-3.5">
-            <div class="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 text-2xl">
-              <i class="fa-solid fa-circle-check"></i>
+            <div class="p-2.5 rounded-xl ${{iconColor}} text-2xl">
+              ${{bannerIcon}}
             </div>
             <div>
               <div class="flex items-center gap-2.5">
-                <span class="px-2.5 py-0.5 rounded text-xs font-bold font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  ${{res.status}}: ${{res.solver_status || 'OPTIMAL'}}
-                </span>
+                ${{statusBadge}}
                 <span class="px-2.5 py-0.5 rounded text-xs font-bold border ${{tagColors}}">
                   ${{res.trip_tag || 'SHORT TRIP'}}
                 </span>
-                <span class="text-xs font-mono text-emerald-400 font-bold">100% Full (${{res.total_cargo_units}} / ${{res.hauler_capacity}} Cars)</span>
+                ${{capacityText}}
               </div>
               <h3 class="text-base font-bold text-white mt-1">
                 ${{res.total_trip_duration_hours}}h Round-Trip Turnaround • ${{res.num_drivers_assigned}} Driver${{res.num_drivers_assigned > 1 ? 's Relay' : ' Direct'}}

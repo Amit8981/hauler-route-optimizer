@@ -82,14 +82,15 @@ class TestNewFormulation(unittest.TestCase):
 
 
     def test_manager_fleet_roster_generation(self):
-        """Test that get_manager_fleet_roster generates all 11 commercial drivers with locations."""
+        """Test that get_manager_fleet_roster generates all 11 commercial drivers under Constraint C-19 Non-Idleness."""
         roster = self.solver.get_manager_fleet_roster()
         summary = roster['summary']
         drivers = roster['drivers']
         
         self.assertEqual(summary['total_drivers'], 11)
-        self.assertEqual(summary['active_dispatched'], 10)
-        self.assertEqual(summary['standby_count'], 1)
+        # Constraint C-19a: Zero idle drivers (all 11 actively dispatched)
+        self.assertEqual(summary['active_dispatched'], 11)
+        self.assertEqual(summary['standby_count'], 0)
         self.assertEqual(summary['multitrip_chained_count'], 4)
         self.assertEqual(summary['fleet_compliance_pct'], 100.0)
         self.assertGreater(summary['total_shift_vehicles_delivered'], 100)
@@ -127,6 +128,65 @@ class TestNewFormulation(unittest.TestCase):
             # C-17 turnaround rest proof
             self.assertTrue(d['hos_validation']['turnaround_rest']['passed'])
             self.assertIn("45 min", d['hos_validation']['turnaround_rest']['used'])
+
+    def test_constraint_c19_workload_equity_band(self):
+        """Test Constraint C-19: utilization percentage across all active drivers is tightly clustered (<=25% spread)."""
+        roster = self.solver.get_manager_fleet_roster()
+        summary = roster['summary']
+        spread = summary['c19_workload_equity_spread_pct']
+        self.assertTrue(summary['c19_equity_satisfied'])
+        self.assertLessEqual(spread, 25.0)
+        self.assertGreater(summary['min_utilization_pct'], 45.0)
+        self.assertLess(summary['max_utilization_pct'], 75.0)
+
+    def test_driver_shortage_analysis_audit(self):
+        """Test Fleet Driver Shortage & Backlogged Inventory Audit in manager roster."""
+        roster = self.solver.get_manager_fleet_roster()
+        self.assertIn('driver_shortage_analysis', roster)
+        shortage = roster['driver_shortage_analysis']
+        
+        self.assertEqual(shortage['total_active_drivers_pool'], 11)
+        self.assertEqual(shortage['total_daily_loads_ready'], 28)
+        self.assertEqual(shortage['backlogged_loads_count'], 12)
+        self.assertEqual(shortage['driver_deficit_count'], 9)
+        self.assertGreater(shortage['backlogged_vehicles_count'], 80)
+        self.assertGreater(shortage['backlogged_inventory_value_usd'], 3000000.0)
+        self.assertTrue(len(shortage['terminal_breakdown']) >= 5)
+
+    def test_soft_coverage_full_trip(self):
+        """Test resilient soft-coverage engine achieves 100% full coverage when constraints permit."""
+        res = self.solver.solve_load_schedule(244861)
+        self.assertEqual(res['status'], 'OPTIMAL')
+        self.assertEqual(res['trip_coverage_status'], 'FULL_COVERAGE')
+        self.assertEqual(res['completion_rate_pct'], 100.0)
+        self.assertFalse(res['is_partial_trip'])
+        self.assertEqual(len(res['uncovered_locations']), 0)
+        self.assertEqual(res['cargo_delivery_audit']['returned_to_depot_undelivered'], 0)
+        self.assertTrue(res['cargo_delivery_audit']['return_trailer_empty'])
+
+    def test_soft_coverage_partial_trip_with_cargo_return(self):
+        """Test soft-coverage gracefully handles tight duty constraint by dropping unreachable stop and returning cargo."""
+        # Custom scenario with 2 dealers (one local, one far in Fresno) and single driver capped at 6.0 hours (360 mins)
+        # Using 8 cars to remain within 80,000 lbs Federal Bridge Law GVWR limit
+        scenario = {
+            'origin_code': 'LA',
+            'delivery_dealer_ids': ['D_LA_01', 'D_LA_05'],  # D_LA_05 is Fresno (>250 miles)
+            'cargo_count': 8,
+            'hauler_capacity': 8,
+            'max_driver_duty_mins': 360,
+            'enforce_11hr_rule': True
+        }
+        res = self.solver.solve_custom_scenario(scenario)
+        self.assertIn(res['status'], ['OPTIMAL', 'FEASIBLE'])
+        # Single driver with 360 mins cannot reach Fresno and return, so D_LA_05 is dropped!
+        self.assertEqual(res['trip_coverage_status'], 'PARTIAL_INCOMPLETE')
+        self.assertTrue(res['is_partial_trip'])
+        self.assertGreater(len(res['uncovered_locations']), 0)
+        self.assertGreater(res['cargo_delivery_audit']['returned_to_depot_undelivered'], 0)
+        self.assertFalse(res['cargo_delivery_audit']['return_trailer_empty'])
+        self.assertEqual(res['uncovered_locations'][0]['dealer_id'], 'D_LA_05')
+        self.assertIn("Fresno", res['uncovered_locations'][0]['dealer_name'])
+        self.assertIn("HOS", res['uncovered_locations'][0]['root_cause'])
 
 
 if __name__ == '__main__':
