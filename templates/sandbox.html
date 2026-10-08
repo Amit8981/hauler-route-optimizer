@@ -577,7 +577,17 @@
             <i class="fa-solid fa-clock-rotate-left text-teal-400"></i>
             <span>Leg-by-Leg Itinerary Timeline</span>
           </div>
-          <span id="turnaroundDurationBadge" class="text-xs font-mono text-teal-400">0.0h Turnaround</span>
+          <div class="flex items-center gap-2">
+            <span id="turnaroundDurationBadge" class="text-xs font-mono text-teal-400">0.0h Turnaround</span>
+            <button onclick="exportSandboxCSV()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded border border-slate-700 transition flex items-center space-x-1 cursor-pointer" title="Export itinerary as CSV">
+              <i class="fa-solid fa-file-csv text-emerald-400"></i>
+              <span>Export CSV</span>
+            </button>
+            <button onclick="exportSandboxJSON()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded border border-slate-700 transition flex items-center space-x-1 cursor-pointer" title="Export scenario solution as JSON">
+              <i class="fa-solid fa-code text-sky-400"></i>
+              <span>JSON</span>
+            </button>
+          </div>
         </div>
         <div class="overflow-x-auto border border-slate-800 rounded-lg">
           <table class="w-full text-left text-xs text-slate-300">
@@ -1287,8 +1297,44 @@
       return `${String(dispH).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
     }
 
+    let currentSandboxSolution = null;
+
+    function exportSandboxCSV() {
+      if (!currentSandboxSolution || !currentSandboxSolution.legs || currentSandboxSolution.legs.length === 0) {
+        alert("Please run an optimization first to generate a valid itinerary.");
+        return;
+      }
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Leg #,From Code,From Name,To Code,To Name,Distance (Miles),Driving Time (Mins),Departure,Arrival,Service (Mins),Driver,Handover Occurred,Remaining Cargo Units\n";
+      currentSandboxSolution.legs.forEach(leg => {
+        csvContent += `${leg.leg_number},"${leg.from_code}","${leg.from_name}","${leg.to_code}","${leg.to_name}",${leg.distance_miles},${leg.travel_time_mins},"${leg.departure_from_origin || ''}","${leg.arrival_at_dest || ''}",${leg.service_time_mins || 0},"${leg.driver_name || ''}",${leg.handover_at_dest ? 'YES' : 'NO'},${leg.remaining_cargo_units || 0}\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `sandbox_scenario_schedule.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function exportSandboxJSON() {
+      if (!currentSandboxSolution) {
+        alert("Please run an optimization first to generate a solution.");
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentSandboxSolution, null, 2));
+      const link = document.createElement("a");
+      link.setAttribute("href", dataStr);
+      link.setAttribute("download", `sandbox_scenario_solution.json`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
     // Render Solution & Results in UI
     function renderSolution(res) {
+      currentSandboxSolution = res;
       const banner = document.getElementById('verdictBanner');
 
       if (res.status === 'INFEASIBLE') {
