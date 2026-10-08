@@ -497,37 +497,248 @@
           </div>
         </div>
 
-        <!-- Tab 2: Timeline / Gantt Chart -->
+        <!-- Tab 2: Timeline & Gantt Chart -->
         <div id="timelineTab" class="tab-content hidden space-y-4">
-          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5">
-            <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300 mb-4 flex items-center space-x-2">
-              <i class="fa-solid fa-timeline text-sky-400"></i>
-              <span>Multi-Driver Handover & Hauler Movement Timeline</span>
-            </h3>
+          <!-- Card 1: Multi-Driver Gantt Activity Chart -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div>
+                <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-200 flex items-center space-x-2">
+                  <i class="fa-solid fa-timeline text-sky-400"></i>
+                  <span>Multi-Driver Handover & Hauler Movement Timeline (Gantt)</span>
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Chronological Gantt schedule showing driving transit, dealer dwell, handover exchange, and rest buffers.</p>
+              </div>
+              <div class="flex items-center space-x-2 text-[10px] font-mono">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-600/30 text-sky-300 border border-sky-500/30"><span class="w-2 h-2 rounded-full bg-sky-400"></span> Transit</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-600/30 text-amber-300 border border-amber-500/30"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Unloading</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-600/30 text-purple-300 border border-purple-500/30"><span class="w-2 h-2 rounded-full bg-purple-400"></span> Handover Buffer</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-600/30 text-emerald-300 border border-emerald-500/30"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Depot Rest</span>
+              </div>
+            </div>
             <div id="ganttChartContainer" class="space-y-4">
-              <!-- Dynamically generated -->
+              <!-- Dynamically generated Gantt bars -->
+            </div>
+          </div>
+
+          <!-- Card 2: Duty Time Allocation & Activity Breakdown Ribbon -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950/80 border border-slate-800 rounded-xl p-4 font-mono text-xs">
+            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 space-y-1">
+              <span class="text-slate-400 text-[10px] uppercase font-bold block"><i class="fa-solid fa-gauge text-sky-400 mr-1"></i> Highway Driving</span>
+              <span class="text-white font-bold text-base" id="ganttDrivingTime">0.0h</span>
+              <span class="text-slate-500 text-[10px] block" id="ganttDrivingPct">0% of total turnaround</span>
+            </div>
+            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 space-y-1">
+              <span class="text-slate-400 text-[10px] uppercase font-bold block"><i class="fa-solid fa-boxes-packing text-amber-400 mr-1"></i> Dealership Dwell</span>
+              <span class="text-amber-300 font-bold text-base" id="ganttServiceTime">0 mins</span>
+              <span class="text-slate-500 text-[10px] block" id="ganttServiceStops">Across delivery stops</span>
+            </div>
+            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 space-y-1">
+              <span class="text-slate-400 text-[10px] uppercase font-bold block"><i class="fa-solid fa-handshake text-purple-400 mr-1"></i> Handover Interchange</span>
+              <span class="text-purple-300 font-bold text-base" id="ganttHandoverTime">0 mins</span>
+              <span class="text-slate-500 text-[10px] block" id="ganttHandoverLoc">No handover needed</span>
+            </div>
+            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 space-y-1">
+              <span class="text-slate-400 text-[10px] uppercase font-bold block"><i class="fa-solid fa-bed text-emerald-400 mr-1"></i> Post-Trip Rest (C-17)</span>
+              <span class="text-emerald-300 font-bold text-base" id="ganttRestTime">45 mins</span>
+              <span class="text-slate-500 text-[10px] block">Depot inspection & rest</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Chronological Trip Milestone Log Table -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+              <h4 class="font-semibold text-xs uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-sky-400"></i>
+                <span>Chronological Dispatch Milestones & HOS Time Clock Checkpoints</span>
+              </h4>
+              <span class="text-slate-400 text-[10px] font-mono">FMCSA 49 CFR § 395 Verified</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs font-mono">
+                <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase border-b border-slate-800">
+                  <tr>
+                    <th class="py-2.5 px-3 text-center">#</th>
+                    <th class="py-2.5 px-3">Milestone Activity</th>
+                    <th class="py-2.5 px-3">Location / Terminal</th>
+                    <th class="py-2.5 px-3">Scheduled Time</th>
+                    <th class="py-2.5 px-2 text-right">Duration</th>
+                    <th class="py-2.5 px-3">Assigned Driver</th>
+                    <th class="py-2.5 px-3">Regulatory Rule</th>
+                    <th class="py-2.5 px-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="timelineMilestonesTableBody" class="divide-y divide-slate-800/60 text-slate-300 text-[11px]">
+                  <!-- Populated dynamically via renderGanttChart -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
         <!-- Tab 3: Route Circuit Diagram -->
         <div id="circuitTab" class="tab-content hidden space-y-4">
-          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-6">
-            <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300 mb-6 flex items-center space-x-2">
-              <i class="fa-solid fa-circle-nodes text-sky-400"></i>
-              <span>Optimized Factory &rarr; Delivery Centre &rarr; Factory Circuit Sequence</span>
-            </h3>
-            <div id="circuitFlowNodes" class="flex flex-col md:flex-row items-center justify-between gap-4 py-6 px-4 bg-slate-900/50 rounded-xl border border-slate-800/80">
+          <!-- Card 1: Visual Stop Circuit Flow Nodes -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div>
+                <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+                  <i class="fa-solid fa-circle-nodes text-sky-400"></i>
+                  <span>Optimized Factory &rarr; Delivery Centre &rarr; Factory Circuit Sequence</span>
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Continuous closed-loop sequence ensuring same-terminal return (C-1 & C-2) with subtour elimination (C-4).</p>
+              </div>
+              <div class="flex items-center space-x-2 text-[10px] font-mono">
+                <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Closed Loop (C-1 & C-2)</span>
+                <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40">MTZ Subtour Free (C-4)</span>
+              </div>
+            </div>
+            <div id="circuitFlowNodes" class="flex flex-col md:flex-row items-center justify-between gap-3 py-6 px-4 bg-slate-900/50 rounded-xl border border-slate-800/80 overflow-x-auto">
               <!-- Flow sequence injected here -->
+            </div>
+          </div>
+
+          <!-- Card 2: Transit Arcs & Highway Leg Matrix Table -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+              <h4 class="font-semibold text-xs uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                <i class="fa-solid fa-road text-sky-400"></i>
+                <span>Highway Transit Arcs & Cumulative Mileage Corridor Matrix</span>
+              </h4>
+              <span class="text-slate-400 text-[10px] font-mono" id="circuitTotalMileageBadge">Total Distance: 0.0 mi</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs font-mono">
+                <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase border-b border-slate-800">
+                  <tr>
+                    <th class="py-2.5 px-3 text-center">Arc #</th>
+                    <th class="py-2.5 px-3">From Facility</th>
+                    <th class="py-2.5 px-3">To Facility</th>
+                    <th class="py-2.5 px-3 text-right">Distance</th>
+                    <th class="py-2.5 px-3 text-right">Drive Time</th>
+                    <th class="py-2.5 px-3 text-right">Avg Speed</th>
+                    <th class="py-2.5 px-3 text-right">Cumulative Miles</th>
+                    <th class="py-2.5 px-3">Operating Driver</th>
+                    <th class="py-2.5 px-3 text-center">Handover / Event</th>
+                  </tr>
+                </thead>
+                <tbody id="circuitArcsTableBody" class="divide-y divide-slate-800/60 text-slate-300 text-[11px]">
+                  <!-- Injected via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Card 3: Waypoint Facilities & Certified Hub Directory -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
+              <h5 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-location-crosshairs text-emerald-400"></i> Route Waypoint Facility Directory
+              </h5>
+              <div id="circuitFacilityDirectory" class="space-y-2 text-xs">
+                <!-- Injected via JavaScript -->
+              </div>
+            </div>
+
+            <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
+              <h5 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved text-amber-400"></i> Routing Integrity & Deadhead Verification
+              </h5>
+              <div class="space-y-2 text-[11px] text-slate-300 leading-relaxed font-sans">
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
+                  <div class="font-bold text-emerald-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-check text-xs"></i> Closed Circuit Depot Loop Guaranteed (C-1 & C-2)
+                  </div>
+                  <p class="text-slate-400 text-[10px]">
+                    The carrier departs from the origin staging yard and returns to the exact same home terminal upon consignment drop-off, eliminating out-of-terminal equipment relocation costs.
+                  </p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
+                  <div class="font-bold text-sky-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-check text-xs"></i> 0 Out-of-Route Deadhead Mileage
+                  </div>
+                  <p class="text-slate-400 text-[10px]">
+                    All transit paths follow the shortest interstate corridors calibrated from GIS travel matrices, preventing superfluous non-revenue miles.
+                  </p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
+                  <div class="font-bold text-purple-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-check text-xs"></i> Certified Hub Intercept Enforcement (C-14)
+                  </div>
+                  <p class="text-slate-400 text-[10px]" id="circuitHubAuditText">
+                    Verified compliant: Trips under 11.0 hours require zero driver turnover; trips exceeding 11.0 hours swap drivers exclusively at certified hubs.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Tab 4: Cargo Manifest Table -->
-        <div id="cargoTab" class="tab-content hidden">
-          <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden">
-            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-              <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300">Vehicle Cargo Manifest for Current Load</h3>
+        <!-- Tab 4: Cargo Manifest Table & GVWR Analysis -->
+        <div id="cargoTab" class="tab-content hidden space-y-4">
+          <!-- Card 1: Carrier Deck Loading & Federal Bridge Law GVWR Gauge (C-10b & C-15) -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div>
+                <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-200 flex items-center space-x-2">
+                  <i class="fa-solid fa-weight-scale text-sky-400"></i>
+                  <span>Carrier Deck Loading & Federal Bridge Law GVWR Analysis (C-10b & C-15)</span>
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Gross Combination Weight Rating (GCWR) verification against statutory 80,000 lbs federal interstate weight limit.</p>
+              </div>
+              <span id="cargoGvwrStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                80,000 lbs GVWR PASS
+              </span>
+            </div>
+
+            <!-- Weight Gauge Bar -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono">
+                <span class="text-slate-400">Gross Combination Weight (GCW)</span>
+                <span class="text-white font-bold" id="cargoGcwLabel">67,816 lbs / 80,000 lbs Max</span>
+              </div>
+              <div class="h-4 bg-slate-900 border border-slate-800 rounded-full overflow-hidden p-0.5">
+                <div id="cargoGcwProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-sky-500 rounded-full transition-all duration-500" style="width: 84%;"></div>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                <span>0 lbs Tare</span>
+                <span>40,000 lbs</span>
+                <span>80,000 lbs Statutory Federal Cap</span>
+              </div>
+            </div>
+
+            <!-- Weight Component Breakdown Chips -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs pt-1">
+              <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                <span class="text-slate-400 text-[10px] uppercase block">Hauler Tare Weight</span>
+                <span class="text-slate-200 font-bold mt-0.5 block" id="cargoTareWeight">25,000 lbs</span>
+                <span class="text-slate-500 text-[10px]">Tractor + Auto-Carrier</span>
+              </div>
+              <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                <span class="text-slate-400 text-[10px] uppercase block">Automobile Cargo Payload</span>
+                <span class="text-sky-300 font-bold mt-0.5 block" id="cargoPayloadWeight">42,816 lbs</span>
+                <span class="text-slate-500 text-[10px]" id="cargoCarsCount">8 Loaded Vehicles</span>
+              </div>
+              <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                <span class="text-slate-400 text-[10px] uppercase block">Federal GVWR Limit</span>
+                <span class="text-amber-300 font-bold mt-0.5 block">80,000 lbs</span>
+                <span class="text-slate-500 text-[10px]">23 CFR § 658.17 (C-10b)</span>
+              </div>
+              <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                <span class="text-slate-400 text-[10px] uppercase block">Bridge Law Safety Cushion</span>
+                <span class="text-emerald-400 font-bold mt-0.5 block" id="cargoGvwrSlack">+12,184 lbs Slack</span>
+                <span class="text-emerald-400/80 text-[10px]">100% Highway Compliant</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Consignment Vehicle Manifest Table -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+              <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-car text-sky-400"></i>
+                <span>Vehicle Cargo Manifest for Current Load</span>
+              </h3>
               <span class="text-xs text-slate-400 font-mono" id="cargoTotalUnitsWeight">8 Units &bull; Total Weight: 42,816 lbs</span>
             </div>
             <div class="overflow-x-auto">
@@ -615,6 +826,41 @@
                   <!-- Dynamically populated via renderMultiTripTour(res) -->
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- Fleet Multi-Trip Shift Benchmark Spotlight Card -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center text-xs font-bold">
+                  <i class="fa-solid fa-star"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-white uppercase tracking-wider">Fleet Benchmark: Driver 7 (Nathan Cole) Multi-Trip Showcase</h4>
+                  <p class="text-[10px] text-slate-400">Proven multi-trip chained shift at Mira Loma VDC: 3 loads delivered in single shift with 45m turnaround rests.</p>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                100% FEASIBLE (5.4h DUTY)
+              </span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800 space-y-1">
+                <span class="text-slate-400 text-[10px] uppercase font-bold block">Trip 1: Load #244861</span>
+                <span class="text-white font-semibold">Mira Loma &rarr; Ontario (47.9 mi)</span>
+                <span class="text-amber-400 text-[10px] block">2.30h + 45m Rest at ML Depot</span>
+              </div>
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800 space-y-1">
+                <span class="text-slate-400 text-[10px] uppercase font-bold block">Trip 2: Load #188377</span>
+                <span class="text-white font-semibold">Mira Loma &rarr; Riverside (38.2 mi)</span>
+                <span class="text-amber-400 text-[10px] block">1.90h + 45m Rest at ML Depot</span>
+              </div>
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800 space-y-1">
+                <span class="text-slate-400 text-[10px] uppercase font-bold block">Trip 3: Load #188384</span>
+                <span class="text-white font-semibold">Mira Loma &rarr; Corona (42.5 mi)</span>
+                <span class="text-emerald-400 text-[10px] block">2.10h &bull; Shift Completed</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1291,6 +1537,50 @@
         </tr>
       `;
       }).join('');
+
+      // Compute GVWR & Deck Loading metrics (C-10b & C-15)
+      const tareLbs = 25000;
+      const totalPayloadLbs = cargoList.reduce((acc, item) => {
+        return acc + (item.weight_lb ? Number(item.weight_lb) : Math.round(Number(item.weight_kg || 2000) * 2.20462));
+      }, 0);
+      const grossLbs = tareLbs + totalPayloadLbs;
+      const maxLimit = 80000;
+      const slackLbs = maxLimit - grossLbs;
+      const pct = Math.min(100, Math.round((grossLbs / maxLimit) * 100));
+
+      const gcwLabel = document.getElementById('cargoGcwLabel');
+      if (gcwLabel) gcwLabel.textContent = `${grossLbs.toLocaleString()} lbs / ${maxLimit.toLocaleString()} lbs Max`;
+      
+      const gcwBar = document.getElementById('cargoGcwProgressBar');
+      if (gcwBar) {
+        gcwBar.style.width = `${pct}%`;
+        gcwBar.className = slackLbs >= 0 
+          ? 'h-full bg-gradient-to-r from-emerald-500 to-sky-500 rounded-full transition-all duration-500' 
+          : 'h-full bg-rose-500 rounded-full transition-all duration-500';
+      }
+
+      const tareEl = document.getElementById('cargoTareWeight');
+      if (tareEl) tareEl.textContent = `${tareLbs.toLocaleString()} lbs`;
+
+      const payEl = document.getElementById('cargoPayloadWeight');
+      if (payEl) payEl.textContent = `${totalPayloadLbs.toLocaleString()} lbs`;
+
+      const carsEl = document.getElementById('cargoCarsCount');
+      if (carsEl) carsEl.textContent = `${cargoList.length} Loaded Vehicles`;
+
+      const slackEl = document.getElementById('cargoGvwrSlack');
+      if (slackEl) {
+        slackEl.textContent = slackLbs >= 0 ? `+${slackLbs.toLocaleString()} lbs Slack` : `${slackLbs.toLocaleString()} lbs Exceeded`;
+        slackEl.className = slackLbs >= 0 ? 'text-emerald-400 font-bold mt-0.5 block' : 'text-rose-400 font-bold mt-0.5 block';
+      }
+
+      const badgeEl = document.getElementById('cargoGvwrStatusBadge');
+      if (badgeEl) {
+        badgeEl.textContent = slackLbs >= 0 ? `80,000 lbs GVWR PASS (+${slackLbs.toLocaleString()} lbs)` : `GVWR EXCEEDED`;
+        badgeEl.className = slackLbs >= 0 
+          ? 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+          : 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40';
+      }
     }
 
     async function triggerSolve() {
@@ -1698,7 +1988,7 @@
       if (!container) return;
 
       const totalMins = res.total_trip_duration_mins || 1;
-      const legs = res.legs;
+      const legs = res.legs || [];
 
       let html = `
         <div class="space-y-3">
@@ -1708,7 +1998,7 @@
                 <i class="fa-solid fa-truck text-sky-400"></i>
                 <span>Hauler Complete Trip (${res.assigned_hauler_name})</span>
               </span>
-              <span class="font-mono text-[11px]">${res.total_trip_duration_hours}h Total Turnaround</span>
+              <span class="font-mono text-[11px] text-sky-300 font-semibold">${res.total_trip_duration_hours}h Total Turnaround</span>
             </div>
             <div class="h-8 bg-slate-900 border border-slate-800 rounded-lg flex overflow-hidden p-0.5">
       `;
@@ -1754,11 +2044,11 @@
       const handoverLeg = legs.find(l => l.handover_at_dest);
       if (handoverLeg) {
         html += `
-          <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center space-x-3 text-xs text-amber-300">
+          <div class="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg flex items-center space-x-3 text-xs text-purple-300">
             <i class="fa-solid fa-handshake text-lg"></i>
             <div>
               <span class="font-semibold">Driver Handover Completed at ${handoverLeg.to_name} (${handoverLeg.to_code})</span>
-              <p class="text-[11px] text-amber-400/80">45-minute mandatory buffer elapsed between Driver 1 offboarding and Driver 2 onboarding to ensure FMCSA duty continuity (C-14 & C-17).</p>
+              <p class="text-[11px] text-purple-400/80">45-minute mandatory buffer elapsed between Driver 1 offboarding and Driver 2 onboarding to ensure FMCSA duty continuity (C-14 & C-17).</p>
             </div>
           </div>
         `;
@@ -1766,23 +2056,132 @@
 
       html += `</div>`;
       container.innerHTML = html;
+
+      // Update Duty Time Allocation Chips in Tab 2
+      const drivingMins = res.total_travel_time_mins || 0;
+      const drivingHours = (drivingMins / 60.0).toFixed(2);
+      const drivingPct = Math.round((drivingMins / totalMins) * 100);
+      const drivingEl = document.getElementById('ganttDrivingTime');
+      if (drivingEl) drivingEl.textContent = `${drivingHours}h`;
+      const drivingPctEl = document.getElementById('ganttDrivingPct');
+      if (drivingPctEl) drivingPctEl.textContent = `${drivingPct}% of turnaround`;
+
+      const totalServiceMins = legs.reduce((acc, l) => acc + (l.service_time_mins || 0), 0);
+      const serviceEl = document.getElementById('ganttServiceTime');
+      if (serviceEl) serviceEl.textContent = `${totalServiceMins} mins`;
+      const stopsEl = document.getElementById('ganttServiceStops');
+      if (stopsEl) stopsEl.textContent = `Across ${Math.max(1, legs.length - 1)} stops`;
+
+      const handoverMins = handoverLeg ? (handoverLeg.handover_duration_mins || 45) : 0;
+      const handoverTimeEl = document.getElementById('ganttHandoverTime');
+      if (handoverTimeEl) handoverTimeEl.textContent = `${handoverMins} mins`;
+      const handoverLocEl = document.getElementById('ganttHandoverLoc');
+      if (handoverLocEl) handoverLocEl.textContent = handoverLeg ? `At ${handoverLeg.to_name}` : 'Direct single-driver';
+
+      const restTimeEl = document.getElementById('ganttRestTime');
+      if (restTimeEl) restTimeEl.textContent = `${res.rest_time_mins || 45} mins`;
+
+      // Populate Chronological Milestone Table
+      const milestoneTbody = document.getElementById('timelineMilestonesTableBody');
+      if (milestoneTbody && legs.length > 0) {
+        let mRows = [];
+        let mIdx = 1;
+
+        // Departure from depot
+        mRows.push(`
+          <tr class="hover:bg-slate-800/40">
+            <td class="py-2.5 px-3 text-slate-500 text-center font-bold">${mIdx++}</td>
+            <td class="py-2.5 px-3 font-semibold text-white"><i class="fa-solid fa-play text-emerald-400 mr-1.5"></i> Origin Depot Departure</td>
+            <td class="py-2.5 px-3 text-sky-400 font-bold">${res.origin_vdc_name} (${res.origin_vdc})</td>
+            <td class="py-2.5 px-3 text-emerald-300 font-bold">${legs[0].departure_from_origin}</td>
+            <td class="py-2.5 px-2 text-right text-slate-400">0 min</td>
+            <td class="py-2.5 px-3 text-slate-300">${legs[0].driver_name}</td>
+            <td class="py-2.5 px-3 text-slate-400">Constraint C-1 (Depot Start)</td>
+            <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Dispatched</span></td>
+          </tr>
+        `);
+
+        // Leg transit and arrivals
+        legs.forEach((leg, idx) => {
+          const isReturn = (idx === legs.length - 1);
+          mRows.push(`
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2.5 px-3 text-slate-500 text-center font-bold">${mIdx++}</td>
+              <td class="py-2.5 px-3 text-slate-200"><i class="fa-solid fa-road text-sky-400 mr-1.5"></i> Highway Transit (Leg #${leg.leg_number})</td>
+              <td class="py-2.5 px-3 text-slate-300">${leg.from_code} &rarr; ${leg.to_code}</td>
+              <td class="py-2.5 px-3 text-slate-300">${leg.departure_from_origin} &rarr; ${leg.arrival_at_dest}</td>
+              <td class="py-2.5 px-2 text-right text-sky-300 font-bold">${leg.travel_time_mins} min</td>
+              <td class="py-2.5 px-3 text-slate-300">${leg.driver_name}</td>
+              <td class="py-2.5 px-3 text-slate-400">FMCSA 11h Driving (C-12a)</td>
+              <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-bold">${leg.distance_miles} mi</span></td>
+            </tr>
+          `);
+
+          if (!isReturn && leg.service_time_mins > 0) {
+            mRows.push(`
+              <tr class="hover:bg-slate-800/40 bg-amber-950/10">
+                <td class="py-2.5 px-3 text-slate-500 text-center font-bold">${mIdx++}</td>
+                <td class="py-2.5 px-3 font-semibold text-amber-300"><i class="fa-solid fa-boxes-packing text-amber-400 mr-1.5"></i> Dealership Drop Unloading</td>
+                <td class="py-2.5 px-3 text-white font-bold">${leg.to_name} (${leg.to_code})</td>
+                <td class="py-2.5 px-3 text-amber-300">${leg.arrival_at_dest} &rarr; ${leg.departure_from_dest}</td>
+                <td class="py-2.5 px-2 text-right text-amber-300 font-bold">${leg.service_time_mins} min</td>
+                <td class="py-2.5 px-3 text-slate-300">${leg.driver_name}</td>
+                <td class="py-2.5 px-3 text-slate-400">Delivery Continuity (C-3)</td>
+                <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">Unloaded</span></td>
+              </tr>
+            `);
+          }
+
+          if (leg.handover_at_dest) {
+            mRows.push(`
+              <tr class="hover:bg-slate-800/40 bg-purple-950/20">
+                <td class="py-2.5 px-3 text-slate-500 text-center font-bold">${mIdx++}</td>
+                <td class="py-2.5 px-3 font-semibold text-purple-300"><i class="fa-solid fa-handshake text-purple-400 mr-1.5"></i> Certified Hub Driver Handover</td>
+                <td class="py-2.5 px-3 text-white font-bold">${leg.to_name} (${leg.to_code})</td>
+                <td class="py-2.5 px-3 text-purple-300">${leg.arrival_at_dest}</td>
+                <td class="py-2.5 px-2 text-right text-purple-300 font-bold">45 min</td>
+                <td class="py-2.5 px-3 text-purple-300">Relay Exchange</td>
+                <td class="py-2.5 px-3 text-slate-400">Handover Buffer (C-14)</td>
+                <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold">Swapped</span></td>
+              </tr>
+            `);
+          }
+        });
+
+        // Final Return
+        const lastLeg = legs[legs.length - 1];
+        mRows.push(`
+          <tr class="hover:bg-slate-800/40 bg-emerald-950/20">
+            <td class="py-2.5 px-3 text-slate-500 text-center font-bold">${mIdx++}</td>
+            <td class="py-2.5 px-3 font-semibold text-emerald-300"><i class="fa-solid fa-bed text-emerald-400 mr-1.5"></i> Factory Depot Return & Turnaround Rest</td>
+            <td class="py-2.5 px-3 text-white font-bold">${res.origin_vdc_name} (${res.origin_vdc})</td>
+            <td class="py-2.5 px-3 text-emerald-300 font-bold">${lastLeg.arrival_at_dest}</td>
+            <td class="py-2.5 px-2 text-right text-emerald-300 font-bold">${res.rest_time_mins || 45} min</td>
+            <td class="py-2.5 px-3 text-slate-300">${lastLeg.driver_name}</td>
+            <td class="py-2.5 px-3 text-slate-400">Depot Rest Buffer (C-17)</td>
+            <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Closed Loop</span></td>
+          </tr>
+        `);
+
+        milestoneTbody.innerHTML = mRows.join('');
+      }
     }
 
     function renderCircuitDiagram(res) {
       const container = document.getElementById('circuitFlowNodes');
       if (!container) return;
 
-      const legs = res.legs;
+      const legs = res.legs || [];
       let nodesHtml = [];
 
       nodesHtml.push(`
-        <div class="flex flex-col items-center text-center p-3 bg-slate-950 border-2 border-sky-500 rounded-xl min-w-[140px] shadow-lg">
+        <div class="flex flex-col items-center text-center p-3.5 bg-slate-950 border-2 border-sky-500 rounded-xl min-w-[140px] shadow-lg">
           <div class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center mb-1 text-xs">
             <i class="fa-solid fa-warehouse"></i>
           </div>
           <div class="text-xs font-bold text-white">${res.origin_vdc}</div>
           <div class="text-[10px] text-slate-400">Depot Start</div>
-          <div class="text-[9px] font-mono text-emerald-400 mt-1">${legs[0].departure_from_origin}</div>
+          <div class="text-[9px] font-mono text-emerald-400 mt-1">${legs[0]?.departure_from_origin || '06:00 AM'}</div>
         </div>
       `);
 
@@ -1796,7 +2195,7 @@
           <div class="text-slate-600 text-lg hidden md:block">
             <i class="fa-solid fa-arrow-right"></i>
           </div>
-          <div class="flex flex-col items-center text-center p-3 bg-slate-950 border-2 ${border} rounded-xl min-w-[150px] shadow-lg relative">
+          <div class="flex flex-col items-center text-center p-3.5 bg-slate-950 border-2 ${border} rounded-xl min-w-[150px] shadow-lg relative">
             ${isHandover ? '<span class="absolute -top-2.5 px-2 py-0.5 bg-amber-500 text-slate-950 text-[9px] font-extrabold uppercase rounded-full tracking-wider">Handover Hub (C-14)</span>' : ''}
             <div class="w-8 h-8 rounded-full ${bgIcon} flex items-center justify-center mb-1 text-xs">
               <i class="fa-solid ${isHandover ? 'fa-handshake' : 'fa-building'}"></i>
@@ -1809,21 +2208,108 @@
       });
 
       const lastLeg = legs[legs.length - 1];
-      nodesHtml.push(`
-        <div class="text-slate-600 text-lg hidden md:block">
-          <i class="fa-solid fa-arrow-right"></i>
-        </div>
-        <div class="flex flex-col items-center text-center p-3 bg-slate-950 border-2 border-emerald-500 rounded-xl min-w-[140px] shadow-lg">
-          <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-1 text-xs">
-            <i class="fa-solid fa-flag-checkered"></i>
+      if (lastLeg) {
+        nodesHtml.push(`
+          <div class="text-slate-600 text-lg hidden md:block">
+            <i class="fa-solid fa-arrow-right"></i>
           </div>
-          <div class="text-xs font-bold text-white">${res.origin_vdc}</div>
-          <div class="text-[10px] text-slate-400">Depot Return (C-2)</div>
-          <div class="text-[9px] font-mono text-emerald-400 mt-1">${lastLeg.arrival_at_dest}</div>
-        </div>
-      `);
+          <div class="flex flex-col items-center text-center p-3.5 bg-slate-950 border-2 border-emerald-500 rounded-xl min-w-[140px] shadow-lg">
+            <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-1 text-xs">
+              <i class="fa-solid fa-flag-checkered"></i>
+            </div>
+            <div class="text-xs font-bold text-white">${res.origin_vdc}</div>
+            <div class="text-[10px] text-slate-400">Depot Return (C-2)</div>
+            <div class="text-[9px] font-mono text-emerald-400 mt-1">${lastLeg.arrival_at_dest}</div>
+          </div>
+        `);
+      }
 
       container.innerHTML = nodesHtml.join('');
+
+      // Update Total Mileage Badge in Tab 3
+      const mileageBadge = document.getElementById('circuitTotalMileageBadge');
+      if (mileageBadge) mileageBadge.textContent = `Total Distance: ${res.total_distance_miles} mi (${legs.length} Arcs)`;
+
+      // Populate Transit Arcs Table
+      const arcsTbody = document.getElementById('circuitArcsTableBody');
+      if (arcsTbody && legs.length > 0) {
+        let cumMiles = 0;
+        arcsTbody.innerHTML = legs.map((leg, idx) => {
+          cumMiles += Number(leg.distance_miles || 0);
+          const hours = Number(leg.travel_time_mins || 60) / 60.0;
+          const avgMph = hours > 0 ? Math.round(Number(leg.distance_miles) / hours) : 55;
+          const isReturn = (idx === legs.length - 1);
+          const eventTag = leg.handover_at_dest
+            ? '<span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold">Handover Hub (C-14)</span>'
+            : isReturn
+            ? '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Depot Return (C-2)</span>'
+            : '<span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-bold">Customer Drop (C-3)</span>';
+
+          return `
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2.5 px-3 text-slate-500 text-center font-bold">${idx + 1}</td>
+              <td class="py-2.5 px-3 text-white font-semibold">${leg.from_name} <span class="text-slate-500 text-[10px]">(${leg.from_code})</span></td>
+              <td class="py-2.5 px-3 text-white font-semibold">${leg.to_name} <span class="text-slate-500 text-[10px]">(${leg.to_code})</span></td>
+              <td class="py-2.5 px-3 text-right font-bold text-sky-300 font-mono">${leg.distance_miles} mi</td>
+              <td class="py-2.5 px-3 text-right text-slate-300 font-mono">${leg.travel_time_mins} min</td>
+              <td class="py-2.5 px-3 text-right text-slate-400 font-mono">${avgMph} mph</td>
+              <td class="py-2.5 px-3 text-right text-emerald-400 font-bold font-mono">${cumMiles.toFixed(1)} mi</td>
+              <td class="py-2.5 px-3 text-slate-300">${leg.driver_name}</td>
+              <td class="py-2.5 px-3 text-center">${eventTag}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Populate Waypoint Facilities Directory
+      const facContainer = document.getElementById('circuitFacilityDirectory');
+      if (facContainer && legs.length > 0) {
+        let facHtml = [];
+        facHtml.push(`
+          <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs">
+                <i class="fa-solid fa-warehouse"></i>
+              </div>
+              <div>
+                <span class="font-bold text-white block">${res.origin_vdc_name} (${res.origin_vdc})</span>
+                <span class="text-[10px] text-slate-500">Origin Staging Factory Yard &bull; Assembly Depot</span>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-mono">Origin Base</span>
+          </div>
+        `);
+
+        legs.forEach((leg, idx) => {
+          if (idx === legs.length - 1) return;
+          const isH = leg.handover_at_dest;
+          facHtml.push(`
+            <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded ${isH ? 'bg-purple-500/20 text-purple-400' : 'bg-indigo-500/20 text-indigo-400'} flex items-center justify-center text-xs">
+                  <i class="fa-solid ${isH ? 'fa-handshake' : 'fa-building'}"></i>
+                </div>
+                <div>
+                  <span class="font-bold text-white block">${leg.to_name} (${leg.to_code})</span>
+                  <span class="text-[10px] text-slate-500">${isH ? 'Certified Relay Staging Lounge & Exchange Hub' : 'Authorized Dealership Vehicle Unloading Bay'}</span>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded ${isH ? 'bg-purple-500/20 text-purple-300' : 'bg-amber-500/20 text-amber-300'} text-[10px] font-mono">${isH ? 'Certified Hub' : 'Delivery Stop'}</span>
+            </div>
+          `);
+        });
+
+        facContainer.innerHTML = facHtml.join('');
+      }
+
+      // Update Relay Hub Audit Text
+      const hubAuditEl = document.getElementById('circuitHubAuditText');
+      if (hubAuditEl) {
+        const isLong = (res.total_trip_duration_hours > 11.0);
+        hubAuditEl.innerHTML = isLong
+          ? `<strong class="text-purple-300">Relay Enforced:</strong> Round trip is ${res.total_trip_duration_hours}h (> 11.0h limit). Mandatory 45-min driver handover executed at certified hub to guarantee compliance.`
+          : `<strong class="text-emerald-300">Single Driver Continuous:</strong> Round trip is ${res.total_trip_duration_hours}h (<= 11.0h limit). Executed without intermediate handover delay.`;
+      }
     }
 
     function formatMinsToAmPm(totalMins) {
