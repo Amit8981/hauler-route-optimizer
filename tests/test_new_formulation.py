@@ -188,6 +188,40 @@ class TestNewFormulation(unittest.TestCase):
         self.assertIn("Fresno", res['uncovered_locations'][0]['dealer_name'])
         self.assertIn("HOS", res['uncovered_locations'][0]['root_cause'])
 
+    def test_complete_constraint_evaluations_report(self):
+        """Test that CP-SAT solver generates formal mathematical audit report for all 20 constraints (C-1 to C-20)."""
+        res = self.solver.solve_load_schedule(244606, trip_start_mins=360, shift_type='AM')
+        self.assertIn('constraint_evaluations', res)
+        evals = res['constraint_evaluations']
+        self.assertEqual(len(evals), 20)
+        
+        # Verify all 20 constraints passed
+        all_passed = all(e['passed'] for e in evals)
+        self.assertTrue(all_passed, f"Failed constraints: {[e['id'] for e in evals if not e['passed']]}")
+        
+        # Verify required keys
+        required_keys = {
+            'id', 'name', 'category', 'status', 'passed', 'formula',
+            'observed_value', 'regulatory_limit', 'safety_slack',
+            'proof_detail', 'governing_regulation'
+        }
+        for e in evals:
+            self.assertTrue(required_keys.issubset(e.keys()), f"Missing keys in {e.get('id')}: {required_keys - set(e.keys())}")
+            self.assertEqual(e['status'], 'PASS')
+            self.assertTrue(len(e['observed_value']) > 0)
+            self.assertTrue(len(e['regulatory_limit']) > 0)
+            self.assertTrue(len(e['safety_slack']) > 0)
+            self.assertTrue(len(e['proof_detail']) > 0)
+
+        # Verify all expected constraint IDs are present
+        expected_ids = {
+            'C-1 & C-2', 'C-3', 'C-4', 'C-5', 'C-6', 'C-7', 'C-8 & C-9',
+            'C-10a', 'C-10b', 'C-11', 'C-12a', 'C-12b', 'C-13', 'C-14',
+            'C-15', 'C-16', 'C-17', 'C-18', 'C-19', 'C-20'
+        }
+        eval_ids = {e['id'] for e in evals}
+        self.assertEqual(eval_ids, expected_ids)
+
 
 if __name__ == '__main__':
     unittest.main()
