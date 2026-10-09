@@ -1793,6 +1793,7 @@
       }
 
       // Update Rationale & Trip Attributes Banner
+      const numDrivers = (res.drivers_assigned && res.drivers_assigned.length) || res.num_drivers_assigned || 1;
       const rationaleDriverTag = document.getElementById('rationaleDriverTag');
       if (rationaleDriverTag) {
         if (numDrivers === 1) {
@@ -1817,12 +1818,12 @@
       document.getElementById('attrRestTime').textContent = `${restMins} min depot buffer (C-17)`;
       document.getElementById('attrHandoverTime').textContent = handoverLeg ? `${handoverLeg.handover_duration_mins} min at ${handoverLeg.to_name}` : 'None (Single Driver continuous)';
 
-      renderDriverDutyBars(res.drivers_assigned);
-      renderItineraryTable(res.legs);
-      renderGanttChart(res);
-      renderCircuitDiagram(res);
-      renderMultiTripTour(res);
-      renderConstraintDrawer(res.constraint_evaluations || []);
+      try { renderDriverDutyBars(res.drivers_assigned || []); } catch (e) { console.error('Duty bars error:', e); }
+      try { renderItineraryTable(res.legs || []); } catch (e) { console.error('Itinerary error:', e); }
+      try { renderGanttChart(res); } catch (e) { console.error('Gantt error:', e); }
+      try { renderCircuitDiagram(res); } catch (e) { console.error('Circuit error:', e); }
+      try { renderMultiTripTour(res); } catch (e) { console.error('MultiTrip error:', e); }
+      try { renderConstraintDrawer(res.constraint_evaluations || []); } catch (e) { console.error('Drawer error:', e); }
     }
 
     function renderDriverDutyBars(drivers) {
@@ -2019,22 +2020,25 @@
       html += `</div></div>`;
 
       res.drivers_assigned.forEach((d, idx) => {
-        const dHours = d.total_duty_hours;
-        const dPct = Math.round((d.total_duty_mins / totalMins) * 100);
+        const dHours = d.total_duty_hours || 0;
+        const dPct = Math.round(((d.total_duty_mins || 0) / totalMins) * 100);
+        const dName = d.driver?.name || d.driver_name || (`Driver ${idx + 1}`);
+        const dShift = d.shift_type || d.driver?.shift_type || 'AM';
+        const dLegs = Array.isArray(d.legs) ? d.legs.join(', ') : (d.legs || 'Active Shift');
 
         html += `
           <div>
             <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
               <span class="font-semibold text-slate-300 flex items-center space-x-1.5">
                 <i class="fa-solid fa-user-check text-emerald-400"></i>
-                <span>Driver ${idx + 1}: ${d.driver.name} (${d.shift_type || 'AM'} Shift)</span>
+                <span>Driver ${idx + 1}: ${dName} (${dShift} Shift)</span>
               </span>
               <span class="font-mono text-[11px] text-emerald-400 font-semibold">${dHours}h Duty (11h Daily & 70h Weekly Compliant)</span>
             </div>
             <div class="h-8 bg-slate-900 border border-slate-800 rounded-lg p-0.5 relative">
               <div class="h-full bg-emerald-600/70 border border-emerald-500/40 rounded flex items-center px-3 text-[11px] text-white font-mono"
                    style="width: ${dPct}%">
-                <span>Active Shift (${d.legs.join(', ')})</span>
+                <span>Active Shift (${dLegs})</span>
               </div>
             </div>
           </div>
@@ -2615,6 +2619,12 @@
 
       if (tabId === 'driverRosterTab') {
         renderManagerRoster();
+      } else if (tabId === 'timelineTab' && currentSolution) {
+        renderGanttChart(currentSolution);
+      } else if (tabId === 'circuitTab' && currentSolution) {
+        renderCircuitDiagram(currentSolution);
+      } else if (tabId === 'multiTripTab' && currentSolution) {
+        renderMultiTripTour(currentSolution);
       }
     }
 
@@ -3155,6 +3165,16 @@
       if (!drawer || !backdrop || !panel) return;
 
       if (show) {
+        if (!currentConstraintEvaluations || currentConstraintEvaluations.length === 0) {
+          if (currentSolution && currentSolution.constraint_evaluations && currentSolution.constraint_evaluations.length > 0) {
+            renderConstraintDrawer(currentSolution.constraint_evaluations);
+          } else if (window.EMBEDDED_DATA && window.EMBEDDED_DATA.solutions) {
+            const embSol = window.EMBEDDED_DATA.solutions[String(currentLoadId)] || Object.values(window.EMBEDDED_DATA.solutions)[0];
+            if (embSol && embSol.constraint_evaluations && embSol.constraint_evaluations.length > 0) {
+              renderConstraintDrawer(embSol.constraint_evaluations);
+            }
+          }
+        }
         drawer.classList.remove('invisible', 'pointer-events-none');
         drawer.classList.add('opacity-100');
         setTimeout(() => {
@@ -3212,6 +3232,17 @@
     function renderConstraintDrawerCards() {
       const listEl = document.getElementById('constraintDrawerList');
       if (!listEl) return;
+
+      if (!currentConstraintEvaluations || currentConstraintEvaluations.length === 0) {
+        if (currentSolution && currentSolution.constraint_evaluations && currentSolution.constraint_evaluations.length > 0) {
+          currentConstraintEvaluations = currentSolution.constraint_evaluations;
+        } else if (window.EMBEDDED_DATA && window.EMBEDDED_DATA.solutions) {
+          const embSol = window.EMBEDDED_DATA.solutions[String(currentLoadId)] || Object.values(window.EMBEDDED_DATA.solutions)[0];
+          if (embSol && embSol.constraint_evaluations && embSol.constraint_evaluations.length > 0) {
+            currentConstraintEvaluations = embSol.constraint_evaluations;
+          }
+        }
+      }
 
       if (!currentConstraintEvaluations || currentConstraintEvaluations.length === 0) {
         listEl.innerHTML = `
