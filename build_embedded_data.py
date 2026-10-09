@@ -89,6 +89,12 @@ data_bundle['multitrip_shifts']['DRV_07'] = multi_trip_res
 print("Generating complete Manager Fleet Roster with multi-trip validations...")
 data_bundle['manager_roster'] = solver.get_manager_fleet_roster()
 
+# Precompute Option 1 Fleet VIN Equity Dispatch (min(W_max - W_min))
+print("Solving Option 1 Fleet VIN Equity Dispatch (min(W_max - W_min))...")
+from hauler_equitable_vin_solver import HaulerEquitableVINSolver
+equitable_solver = HaulerEquitableVINSolver()
+data_bundle['fleet_vin_equity'] = equitable_solver.solve_fleet_vin_equity_dispatch()
+
 with open('data/embedded_data.json', 'w') as f:
     json.dump(data_bundle, f)
 

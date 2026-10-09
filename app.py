@@ -10,9 +10,11 @@ import csv
 import pandas as pd
 from flask import Flask, render_template, request, jsonify, Response, send_file
 from hauler_cpsat_solver import HaulerCPSATSolver, VDC_CODE_TO_NAME
+from hauler_equitable_vin_solver import HaulerEquitableVINSolver
 
 app = Flask(__name__)
 solver = HaulerCPSATSolver()
+equitable_solver = HaulerEquitableVINSolver()
 
 # Cache latest solutions in memory
 solutions_cache = {}
@@ -200,6 +202,47 @@ def solve_schedule():
         solutions_cache[int(load_id)] = res
         
     return jsonify(res)
+
+
+@app.route('/api/solve_equitable', methods=['POST'])
+def solve_equitable_schedule():
+    """Optimizes schedule with Option 1 Single Objective: min(W_max - W_min)."""
+    data = request.json or {}
+    load_id = data.get('load_id')
+    if not load_id:
+        return jsonify({'success': False, 'error': 'load_id is required'}), 400
+    
+    trip_start_str = data.get('trip_start_time', '07:00')
+    try:
+        parts = trip_start_str.split(':')
+        start_mins = int(parts[0]) * 60 + int(parts[1])
+    except Exception:
+        start_mins = 420
+        
+    duty_limit_hours = float(data.get('max_driver_duty_hours', 11.0))
+    duty_limit_mins = int(round(duty_limit_hours * 60))
+    shift_type = data.get('shift_type', 'AM')
+    post_trip_rest_mins = int(data.get('post_trip_rest_mins', 45))
+    
+    res = equitable_solver.solve_load_schedule_vin_equity(
+        load_id=int(load_id),
+        trip_start_mins=start_mins,
+        max_driver_duty_mins=duty_limit_mins,
+        shift_type=shift_type,
+        post_trip_rest_mins=post_trip_rest_mins
+    )
+    return jsonify(res)
+
+
+@app.route('/api/fleet_vin_equity', methods=['GET', 'POST'])
+def get_fleet_vin_equity():
+    """Fleet-wide Option 1 CP-SAT optimizer minimizing (W_max - W_min)."""
+    try:
+        res = equitable_solver.solve_fleet_vin_equity_dispatch()
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({'status': 'ERROR', 'message': str(e)}), 400
+
 
 
 @app.route('/api/multitrip', methods=['POST'])

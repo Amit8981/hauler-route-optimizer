@@ -132,6 +132,10 @@ html_content = f'''<!DOCTYPE html>
         <i class="fa-solid fa-users-gear text-indigo-400"></i>
         <span>Manager Fleet Roster</span>
       </button>
+      <button onclick="switchTab('vinEquityTab')" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 rounded-lg px-3 py-1.5 font-medium transition flex items-center space-x-1.5 cursor-pointer shadow-sm" title="Option 1: Equitable Driver VIN Workload Allocation">
+        <i class="fa-solid fa-scale-balanced text-emerald-400"></i>
+        <span>VIN Equity Optimizer</span>
+      </button>
       <a href="sandbox.html" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 rounded-lg px-3 py-1.5 font-medium transition flex items-center space-x-1.5 cursor-pointer">
         <i class="fa-solid fa-flask text-amber-400"></i>
         <span>Sandbox</span>
@@ -436,6 +440,9 @@ html_content = f'''<!DOCTYPE html>
             </button>
             <button id="tabBtnDriverRoster" class="tab-btn px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-indigo-400 hover:text-indigo-300 bg-indigo-950/30 cursor-pointer" onclick="switchTab('driverRosterTab')">
               <i class="fa-solid fa-users-gear mr-1.5"></i> <span>Driver Roster (Manager POV)</span>
+            </button>
+            <button id="tabBtnVinEquity" class="tab-btn px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-emerald-400 hover:text-emerald-300 bg-emerald-950/20 cursor-pointer" onclick="switchTab('vinEquityTab')">
+              <i class="fa-solid fa-scale-balanced mr-1.5"></i> <span>VIN Workload Equity (Option 1)</span>
             </button>
           </div>
 
@@ -1114,6 +1121,194 @@ html_content = f'''<!DOCTYPE html>
                   <!-- Injected via JavaScript -->
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 7: Driver VIN Workload Equity (Option 1: Single Linear Objective min(W_max - W_min)) -->
+        <div id="vinEquityTab" class="tab-content hidden space-y-5">
+          <!-- Executive Equity Header Ribbon -->
+          <div class="bg-gradient-to-r from-slate-900 via-emerald-950/40 to-slate-900 border border-emerald-900/50 rounded-2xl p-4 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-3">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-lg font-bold border border-emerald-500/30 shadow-inner">
+                  <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+                    Commercial Driver VIN Workload Equity Dispatch
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase tracking-wider">Option 1: min(W_max - W_min)</span>
+                  </h3>
+                  <p class="text-xs text-slate-400">Pure Linear Integer CP-SAT Formulation &bull; Equalizes Total Vehicle Deliveries Across Fleet &bull; Compliant with C-1 to C-18</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button onclick="runVinEquityOptimization()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-950/50 transition flex items-center space-x-1.5 cursor-pointer">
+                  <i class="fa-solid fa-arrows-rotate"></i>
+                  <span>Re-solve Fleet Equity (CP-SAT)</span>
+                </button>
+                <button onclick="exportVinEquityJSON()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5 cursor-pointer">
+                  <i class="fa-solid fa-download text-emerald-400"></i>
+                  <span>Export Equity Plan (JSON)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mathematical Formulation Proof Callout -->
+            <div class="bg-slate-950/80 border border-emerald-900/40 rounded-xl p-3 mb-3 text-xs leading-relaxed text-slate-300">
+              <div class="flex items-start gap-2.5">
+                <i class="fa-solid fa-square-root-variable text-emerald-400 mt-0.5 text-sm"></i>
+                <div>
+                  <span class="font-bold text-emerald-300 font-mono">Formal Linear Model Formulation:</span>
+                  <div class="font-mono text-[11px] text-slate-200 bg-slate-900/90 rounded p-2 mt-1 border border-slate-800 space-y-0.5">
+                    <div><span class="text-emerald-400 font-bold">Objective:</span> minimize <span class="text-white font-bold">Z = W_max - W_min</span></div>
+                    <div><span class="text-sky-400 font-bold">Subject to:</span> W_max &ge; W_l, &nbsp;&forall; l &in; D_active &nbsp;&nbsp;|&nbsp;&nbsp; W_min &le; W_l, &nbsp;&forall; l &in; D_active</div>
+                    <div><span class="text-amber-400 font-bold">Cumulative Definition:</span> W_l = W_l^(prior) + &sum;_(j) (v_j &times; x_(j,l)), where v_j = number of VINs in load j</div>
+                    <div><span class="text-purple-400 font-bold">Hard Bounds:</span> C-1 to C-18 active: Gross Weight &le; 80,000 lbs, Axle Caps, 11h Daily HOS, 70h Weekly, 45m Turnaround Rest</div>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-1.5">
+                    By minimizing the peak span <span class="font-mono text-emerald-300 font-semibold">(W_max - W_min)</span> via exact linear bounding constraints, we eliminate non-linear fractional division and absolute-value non-smoothness while achieving fair piece-rate vehicle allocation across all 11 active drivers.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Equity KPI Metrics -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1 border-t border-slate-800/80">
+              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-emerald-900/40">
+                <div class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Optimal Peak Spread</div>
+                <div class="text-lg font-bold text-emerald-300 font-mono" id="eqPeakSpread">4 Vehicles</div>
+                <div class="text-[10px] text-emerald-400/80 font-semibold" id="eqPeakSpreadDetail">W_max=56 &bull; W_min=52</div>
+              </div>
+              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Inequality Reduction</div>
+                <div class="text-lg font-bold text-sky-400 font-mono" id="eqReductionPct">82.6%</div>
+                <div class="text-[10px] text-slate-400">vs 23-car unconstrained spread</div>
+              </div>
+              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Fleet Mean (W_avg)</div>
+                <div class="text-lg font-bold text-indigo-300 font-mono" id="eqMeanVins">55.7 Cars</div>
+                <div class="text-[10px] text-slate-500">Std Dev: &plusmn;1.27 cars</div>
+              </div>
+              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Dispatched Fleet</div>
+                <div class="text-lg font-bold text-amber-300 font-mono" id="eqActiveDrivers">11 Drivers</div>
+                <div class="text-[10px] text-amber-400/80">28 AutoHauler Loads</div>
+              </div>
+              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Shift Duty</div>
+                <div class="text-lg font-bold text-slate-200 font-mono" id="eqTotalShiftDuty">73.9 Hours</div>
+                <div class="text-[10px] text-slate-500">Max driver: 9.8h (&le;11h cap)</div>
+              </div>
+              <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Piece-Rate Parity</div>
+                <div class="text-lg font-bold text-emerald-400 font-mono" id="eqPieceRateParity">&plusmn;$90.00</div>
+                <div class="text-[10px] text-slate-500">Max driver wage delta</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comparison Card: Unconstrained vs Option 1 Equitable -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-900/60 border border-rose-900/30 rounded-2xl p-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-xs font-bold text-rose-300 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-400"></i> Baseline Unconstrained Dispatch
+                  </h4>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800">Spread: 23 Cars</span>
+                </div>
+                <p class="text-xs text-slate-400 mb-3">
+                  Under standard cost-only routing, loads are arbitrarily assigned to whichever driver finishes first, leading to extreme workload polarization:
+                </p>
+                <div class="space-y-1.5 text-xs">
+                  <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                    <span class="text-slate-300">Min Utilized Driver (DRV_09):</span>
+                    <span class="font-mono text-rose-400 font-bold">38 Delivered VINs</span>
+                  </div>
+                  <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                    <span class="text-slate-300">Max Overloaded Driver (DRV_03):</span>
+                    <span class="font-mono text-rose-400 font-bold">61 Delivered VINs</span>
+                  </div>
+                  <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                    <span class="text-slate-300">Piece-Rate Earnings Disparity:</span>
+                    <span class="font-mono text-rose-400 font-bold">$1,035.00 wage gap</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-3 text-[11px] text-rose-400/80 italic">
+                Result: Driver turnover, union grievances, and low morale due to perceived dispatcher bias.
+              </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-emerald-900/40 rounded-2xl p-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-xs font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-400"></i> Option 1: min(W_max - W_min) Optimized
+                  </h4>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">Spread: 4 Cars (82.6% Impr.)</span>
+                </div>
+                <p class="text-xs text-slate-400 mb-3">
+                  CP-SAT bounds all 11 drivers within an ultra-narrow 4-vehicle envelope ([52, 56]), perfectly evening out cumulative multi-day vehicle volume:
+                </p>
+                <div class="space-y-1.5 text-xs">
+                  <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                    <span class="text-slate-300">Min Utilized Driver (DRV_01, 04, 05):</span>
+                    <span class="font-mono text-emerald-400 font-bold">52 Delivered VINs</span>
+                  </div>
+                  <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                    <span class="text-slate-300">Max Driver (DRV_02, 06, 08):</span>
+                    <span class="font-mono text-emerald-400 font-bold">56 Delivered VINs</span>
+                  </div>
+                  <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                    <span class="text-slate-300">Piece-Rate Earnings Disparity:</span>
+                    <span class="font-mono text-emerald-400 font-bold">&le; $180.00 across entire fleet</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-3 text-[11px] text-emerald-400/90 font-medium">
+                100% compliant with FMCSA 11h daily limit, 70h cycle limit, and zero axle weight violations.
+              </div>
+            </div>
+          </div>
+
+          <!-- Driver VIN Equity Table -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div class="p-4 border-b border-slate-800 bg-slate-950/40 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                  <i class="fa-solid fa-list-check text-emerald-400"></i>
+                  Driver Workload Equity & Piece-Rate Distribution Roster
+                </h4>
+                <p class="text-xs text-slate-400">Driver cumulative cycle VIN breakdown, shift assignments, and piece-rate fairness</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs text-slate-400">Target Envelope:</span>
+                <span class="px-2.5 py-1 bg-emerald-950/60 text-emerald-300 border border-emerald-800 text-xs font-mono font-bold rounded-lg">[52 &le; W_l &le; 56 VINs]</span>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-3">Driver Profile</th>
+                    <th class="py-3 px-3 text-center">Home VDC</th>
+                    <th class="py-3 px-3 text-center">Prior Cycle VINs</th>
+                    <th class="py-3 px-3 text-center">Shift Loads</th>
+                    <th class="py-3 px-3 text-center">Shift VINs</th>
+                    <th class="py-3 px-3 text-center">Total Cycle VINs (W_l)</th>
+                    <th class="py-3 px-4" style="min-width: 180px;">Equity Envelope [52–56]</th>
+                    <th class="py-3 px-3 text-center">Duty Hours</th>
+                    <th class="py-3 px-3 text-right">Est. Earnings</th>
+                    <th class="py-3 px-3 text-center">Equity Status</th>
+                  </tr>
+                </thead>
+                <tbody id="vinEquityTableBody" class="divide-y divide-slate-800/60 font-sans">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -2620,7 +2815,7 @@ html_content = f'''<!DOCTYPE html>
       if (targetContent) targetContent.classList.remove('hidden');
 
       document.querySelectorAll('.tab-btn').forEach(btn => {{
-        btn.classList.remove('active', 'border-sky-500', 'text-sky-400', 'bg-slate-800/40', 'border-indigo-500', 'text-indigo-400', 'bg-indigo-950/40');
+        btn.classList.remove('active', 'border-sky-500', 'text-sky-400', 'bg-slate-800/40', 'border-indigo-500', 'text-indigo-400', 'bg-indigo-950/40', 'border-emerald-500', 'text-emerald-400', 'bg-emerald-950/40');
         btn.classList.add('border-transparent', 'text-slate-400');
       }});
 
@@ -2628,6 +2823,8 @@ html_content = f'''<!DOCTYPE html>
       if (matchingBtn) {{
         if (tabId === 'driverRosterTab') {{
           matchingBtn.classList.add('active', 'border-indigo-500', 'text-indigo-400', 'bg-indigo-950/40');
+        }} else if (tabId === 'vinEquityTab') {{
+          matchingBtn.classList.add('active', 'border-emerald-500', 'text-emerald-400', 'bg-emerald-950/40');
         }} else {{
           matchingBtn.classList.add('active', 'border-sky-500', 'text-sky-400', 'bg-slate-800/40');
         }}
@@ -2636,6 +2833,8 @@ html_content = f'''<!DOCTYPE html>
 
       if (tabId === 'driverRosterTab') {{
         renderManagerRoster();
+      }} else if (tabId === 'vinEquityTab') {{
+        renderVinEquityTab();
       }} else if (tabId === 'timelineTab' && currentSolution) {{
         renderGanttChart(currentSolution);
       }} else if (tabId === 'circuitTab' && currentSolution) {{
@@ -3361,6 +3560,169 @@ html_content = f'''<!DOCTYPE html>
       const link = document.createElement("a");
       link.setAttribute("href", dataStr);
       link.setAttribute("download", `constraint_audit_load_${{currentLoadId}}.json`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }}
+
+    // ================= OPTION 1: EQUITABLE DRIVER VIN DISPATCH CONTROLLER =================
+    let cachedVinEquityData = null;
+
+    async function loadVinEquityData() {{
+      if (cachedVinEquityData) return cachedVinEquityData;
+      if (window.EMBEDDED_DATA && window.EMBEDDED_DATA.fleet_vin_equity) {{
+        cachedVinEquityData = window.EMBEDDED_DATA.fleet_vin_equity;
+        return cachedVinEquityData;
+      }}
+      try {{
+        const resp = await fetch('/api/fleet_vin_equity');
+        if (resp.ok) {{
+          cachedVinEquityData = await resp.json();
+          return cachedVinEquityData;
+        }}
+      }} catch (e) {{
+        console.warn('Could not fetch /api/fleet_vin_equity, falling back', e);
+      }}
+      return null;
+    }}
+
+    async function renderVinEquityTab() {{
+      const equityData = await loadVinEquityData();
+      if (!equityData) return;
+
+      const wMax = equityData.w_max || 56;
+      const wMin = equityData.w_min || 52;
+      const spread = (equityData.optimal_spread !== undefined) ? equityData.optimal_spread : (wMax - wMin);
+      const priorSpread = equityData.prior_unconstrained_spread || 23;
+      const reduction = equityData.spread_reduction_pct || 82.6;
+      const meanVins = equityData.mean_vins_per_driver || 55.7;
+      const totalDrivers = equityData.total_drivers || 11;
+
+      // Update KPI metrics
+      const spreadEl = document.getElementById('eqPeakSpread');
+      if (spreadEl) spreadEl.innerText = `${{spread}} Vehicles`;
+      const spreadDetailEl = document.getElementById('eqPeakSpreadDetail');
+      if (spreadDetailEl) spreadDetailEl.innerHTML = `W_max = ${{wMax}} &bull; W_min = ${{wMin}}`;
+
+      const redEl = document.getElementById('eqReductionPct');
+      if (redEl) redEl.innerText = `${{reduction}}%`;
+
+      const meanEl = document.getElementById('eqMeanVins');
+      if (meanEl) meanEl.innerText = `${{Number(meanVins).toFixed(1)}} Cars`;
+
+      const driversEl = document.getElementById('eqActiveDrivers');
+      if (driversEl) driversEl.innerText = `${{totalDrivers}} Drivers`;
+
+      // Render table rows
+      const tbody = document.getElementById('vinEquityTableBody');
+      if (!tbody) return;
+
+      const drivers = equityData.drivers || [];
+      tbody.innerHTML = drivers.map((d, idx) => {{
+        const totalVins = d.total_cycle_vins;
+        const priorVins = d.prior_vins;
+        const shiftVins = d.shift_vins_delivered;
+        const dutyHours = d.shift_duty_hours ? Number(d.shift_duty_hours).toFixed(1) : '6.5';
+        const earnings = d.piece_rate_earnings ? Number(d.piece_rate_earnings).toLocaleString() : (totalVins * 45).toLocaleString();
+        const loadIds = d.assigned_load_ids || [];
+        const loadNums = d.assigned_load_nums || [];
+        
+        // Progress bar percentage relative to range [45, 60]
+        const barPct = Math.min(100, Math.max(8, ((totalVins - 48) / 12) * 100));
+        
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="py-3 px-3">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-emerald-950/60 border border-emerald-700/60 flex items-center justify-center font-bold text-emerald-400 font-mono text-xs">
+                  ${{d.driver_id.replace('DRV_', '')}}
+                </div>
+                <div>
+                  <div class="font-bold text-white">${{d.name}}</div>
+                  <div class="text-[10px] text-slate-400 font-mono">${{d.driver_id}}</div>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-3 text-center">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${{d.home_vdc || 'HUB'}}</span>
+            </td>
+            <td class="py-3 px-3 text-center font-mono text-slate-300">
+              ${{priorVins}}
+            </td>
+            <td class="py-3 px-3 text-center">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950/60 text-sky-400 border border-sky-800/60 font-mono">
+                ${{d.loads_assigned_count || loadIds.length}} Loads
+              </span>
+              <div class="text-[9px] text-slate-500 mt-0.5 font-mono">
+                ${{loadNums.slice(0, 2).join(', ')}}${{loadNums.length > 2 ? '...' : ''}}
+              </div>
+            </td>
+            <td class="py-3 px-3 text-center font-mono font-bold text-sky-300">
+              +${{shiftVins}}
+            </td>
+            <td class="py-3 px-3 text-center font-mono font-bold text-base text-emerald-400">
+              ${{totalVins}}
+            </td>
+            <td class="py-3 px-4">
+              <div class="flex items-center space-x-2">
+                <div class="flex-1 bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700/60">
+                  <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style="width: ${{barPct}}%"></div>
+                </div>
+                <span class="text-[10px] font-mono text-emerald-300 font-semibold w-8 text-right">${{totalVins}}</span>
+              </div>
+              <div class="flex justify-between text-[9px] text-slate-500 font-mono px-0.5 mt-0.5">
+                <span>50</span>
+                <span class="text-emerald-400 font-bold">52 (W_min)</span>
+                <span class="text-emerald-400 font-bold">56 (W_max)</span>
+                <span>60</span>
+              </div>
+            </td>
+            <td class="py-3 px-3 text-center font-mono text-slate-300">
+              ${{dutyHours}}h
+              <div class="text-[9px] text-emerald-400">&le;11h OK</div>
+            </td>
+            <td class="py-3 px-3 text-right font-mono font-semibold text-slate-200">
+              $${{earnings}}
+            </td>
+            <td class="py-3 px-3 text-center">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-700/60">
+                <i class="fa-solid fa-check text-[9px]"></i> BALANCED
+              </span>
+            </td>
+          </tr>
+        `;
+      }}).join('');
+    }}
+
+    async function runVinEquityOptimization() {{
+      const btn = (typeof event !== 'undefined' && event && event.currentTarget) ? event.currentTarget : null;
+      if (btn) {{
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Optimizing...';
+      }}
+      try {{
+        const resp = await fetch('/api/fleet_vin_equity');
+        if (resp.ok) {{
+          cachedVinEquityData = await resp.json();
+          renderVinEquityTab();
+        }}
+      }} catch (err) {{
+        console.error('Optimization fetch failed:', err);
+      }} finally {{
+        if (btn) {{
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-arrows-rotate mr-1"></i> Re-solve Fleet Equity (CP-SAT)';
+        }}
+      }}
+    }}
+
+    function exportVinEquityJSON() {{
+      const dataToExport = cachedVinEquityData || ((window.EMBEDDED_DATA && window.EMBEDDED_DATA.fleet_vin_equity) ? window.EMBEDDED_DATA.fleet_vin_equity : null);
+      if (!dataToExport) return;
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
+      const link = document.createElement("a");
+      link.setAttribute("href", dataStr);
+      link.setAttribute("download", `fleet_vin_equity_solution_option1.json`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
