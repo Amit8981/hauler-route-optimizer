@@ -1256,6 +1256,111 @@
             </div>
           </div>
 
+          <!-- Interactive Driver Utilization Percentage Chart -->
+          <div class="bg-slate-900/90 border border-emerald-900/50 rounded-2xl p-5 shadow-xl space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-base font-bold border border-emerald-500/30 shadow-inner">
+                  <i class="fa-solid fa-chart-column"></i>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+                    Commercial Driver Utilization Percentage Chart
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase tracking-wider">Interactive Hover</span>
+                  </h4>
+                  <p class="text-xs text-slate-400">Hover over any driver's bar to inspect individual utilization %, delivered VINs, and duty metrics</p>
+                </div>
+              </div>
+
+              <!-- Metric Mode Switcher Buttons -->
+              <div class="flex items-center space-x-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                <button id="chartModeVinBtn" onclick="setChartMetricMode('VIN')" class="px-3 py-1 rounded-lg font-semibold transition cursor-pointer bg-emerald-600 text-white shadow-sm shadow-emerald-900/50">
+                  <i class="fa-solid fa-car mr-1 text-[10px]"></i> VIN Cap Utilization %
+                </button>
+                <button id="chartModeDutyBtn" onclick="setChartMetricMode('DUTY')" class="px-3 py-1 rounded-lg font-semibold transition cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800">
+                  <i class="fa-solid fa-clock mr-1 text-[10px]"></i> Shift Duty % (11h Cap)
+                </button>
+                <button id="chartModeShareBtn" onclick="setChartMetricMode('SHARE')" class="px-3 py-1 rounded-lg font-semibold transition cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800">
+                  <i class="fa-solid fa-pie-chart mr-1 text-[10px]"></i> Fleet Volume Share %
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Driver Inspector Banner (Updates on hover) -->
+            <div id="driverHoverInspector" class="bg-slate-950/90 border border-emerald-900/40 rounded-xl p-3 flex flex-wrap items-center justify-between gap-4 transition-all duration-200">
+              <div class="flex items-center space-x-3">
+                <div id="inspectorAvatar" class="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-700/60 flex items-center justify-center font-bold text-emerald-400 font-mono text-sm shadow-inner">
+                  AVG
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span id="inspectorDriverName" class="font-bold text-sm text-white">Fleet Utilization Baseline (11 Commercial Drivers)</span>
+                    <span id="inspectorDriverBadge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">Option 1: min(W_max - W_min)</span>
+                  </div>
+                  <div id="inspectorDriverSub" class="text-xs text-slate-400 font-mono">Hover over any individual driver bar below to inspect detailed driver utilization % and assigned loads</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4 text-xs font-mono">
+                <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
+                  <span class="text-slate-400 text-[10px] block uppercase">Utilization</span>
+                  <span id="inspectorUtilizationPct" class="font-bold text-base text-emerald-400">92.9% Mean</span>
+                </div>
+                <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
+                  <span class="text-slate-400 text-[10px] block uppercase">Delivered Volume</span>
+                  <span id="inspectorDeliveredVins" class="font-bold text-slate-200">55.7 VINs / Driver</span>
+                </div>
+                <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
+                  <span class="text-slate-400 text-[10px] block uppercase">Shift Duty</span>
+                  <span id="inspectorShiftDuty" class="font-bold text-slate-200">6.7h Mean Shift Duty</span>
+                </div>
+                <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
+                  <span class="text-slate-400 text-[10px] block uppercase">Est. Wages</span>
+                  <span id="inspectorEarnings" class="font-bold text-emerald-300">$2,508 Avg</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visual Bar Chart Container -->
+            <div class="relative bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 pt-6">
+              <!-- Y-Axis Scale Indicators & Grid Lines -->
+              <div class="absolute inset-x-4 top-6 bottom-14 flex flex-col justify-between pointer-events-none text-[10px] font-mono text-slate-600">
+                <div class="border-b border-slate-800/60 w-full flex justify-between pr-2"><span>100%</span><span class="text-slate-600">Maximum Cap</span></div>
+                <div class="border-b border-emerald-900/40 w-full flex justify-between pr-2 text-emerald-500/70 font-bold"><span id="chartRefLabel">92.9%</span><span class="text-emerald-500/80">&bull;&bull;&bull; Fleet Target Equity Baseline &bull;&bull;&bull;</span></div>
+                <div class="border-b border-slate-800/60 w-full flex justify-between pr-2"><span>75%</span></div>
+                <div class="border-b border-slate-800/60 w-full flex justify-between pr-2"><span>50%</span></div>
+                <div class="border-b border-slate-800/60 w-full flex justify-between pr-2"><span>25%</span></div>
+                <div class="border-b border-slate-800/80 w-full flex justify-between pr-2"><span>0%</span></div>
+              </div>
+
+              <!-- Bar Columns Grid (11 Drivers) -->
+              <div id="utilizationBarsContainer" class="relative z-10 grid grid-cols-11 gap-2 sm:gap-3 h-64 items-end pb-8">
+                <!-- Dynamically rendered via renderUtilizationChart -->
+              </div>
+
+              <!-- Chart Footnote Legend -->
+              <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 mt-2 px-1">
+                <div class="flex items-center space-x-3">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded bg-emerald-500"></span>
+                    <span>Balanced Envelope [86.7% &ndash; 93.3%]</span>
+                  </span>
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-0.5 bg-emerald-400"></span>
+                    <span>Fleet Mean Target</span>
+                  </span>
+                  <span class="flex items-center gap-1.5 text-slate-400">
+                    <i class="fa-solid fa-arrow-pointer text-xs text-emerald-400"></i>
+                    <span>Hover over any bar to highlight driver name &amp; breakdown</span>
+                  </span>
+                </div>
+                <div class="font-mono text-[10px] text-emerald-400 font-semibold" id="chartParityNote">
+                  Optimal Workload Spread: 4 Cars &bull; 82.6% Inequality Reduction
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Driver VIN Equity Table -->
           <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
             <div class="p-4 border-b border-slate-800 bg-slate-950/40 flex flex-wrap items-center justify-between gap-3">
@@ -3675,6 +3780,256 @@
           </tr>
         `;
       }).join('');
+
+      // Render interactive Driver Utilization Percentage Chart
+      renderUtilizationChart(drivers);
+    }
+
+    // ================= INTERACTIVE DRIVER UTILIZATION PERCENTAGE CHART CONTROLLER =================
+    let currentChartMetricMode = 'VIN'; // 'VIN', 'DUTY', 'SHARE'
+    let currentHoveredDriverId = null;
+
+    function setChartMetricMode(mode) {
+      currentChartMetricMode = mode;
+      const btnVin = document.getElementById('chartModeVinBtn');
+      const btnDuty = document.getElementById('chartModeDutyBtn');
+      const btnShare = document.getElementById('chartModeShareBtn');
+
+      [btnVin, btnDuty, btnShare].forEach(b => {
+        if (b) {
+          b.className = 'px-3 py-1 rounded-lg font-semibold transition cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800';
+        }
+      });
+
+      if (mode === 'VIN' && btnVin) {
+        btnVin.className = 'px-3 py-1 rounded-lg font-semibold transition cursor-pointer bg-emerald-600 text-white shadow-sm shadow-emerald-900/50';
+      } else if (mode === 'DUTY' && btnDuty) {
+        btnDuty.className = 'px-3 py-1 rounded-lg font-semibold transition cursor-pointer bg-sky-600 text-white shadow-sm shadow-sky-900/50';
+      } else if (mode === 'SHARE' && btnShare) {
+        btnShare.className = 'px-3 py-1 rounded-lg font-semibold transition cursor-pointer bg-indigo-600 text-white shadow-sm shadow-indigo-900/50';
+      }
+
+      const drivers = (cachedVinEquityData && cachedVinEquityData.drivers) 
+        ? cachedVinEquityData.drivers 
+        : ((window.EMBEDDED_DATA && window.EMBEDDED_DATA.fleet_vin_equity) ? window.EMBEDDED_DATA.fleet_vin_equity.drivers : []);
+      
+      if (drivers && drivers.length > 0) {
+        renderUtilizationChart(drivers);
+      }
+    }
+
+    function renderUtilizationChart(drivers) {
+      const container = document.getElementById('utilizationBarsContainer');
+      if (!container || !drivers || drivers.length === 0) return;
+
+      const refLabel = document.getElementById('chartRefLabel');
+      const parityNote = document.getElementById('chartParityNote');
+
+      if (currentChartMetricMode === 'VIN') {
+        if (refLabel) refLabel.innerText = '92.9%';
+        if (parityNote) parityNote.innerHTML = 'Metric: <strong>Target VIN Cap %</strong> (W_l / 60 cars) &bull; Clustered in narrow [86.7% &ndash; 93.3%] band';
+      } else if (currentChartMetricMode === 'DUTY') {
+        if (refLabel) refLabel.innerText = '61.2%';
+        if (parityNote) parityNote.innerHTML = 'Metric: <strong>Daily Shift Duty %</strong> (Duty Hours / 11.0h FMCSA Limit) &bull; Zero HOS violations';
+      } else {
+        if (refLabel) refLabel.innerText = '9.1%';
+        if (parityNote) parityNote.innerHTML = 'Metric: <strong>Fleet Volume Share %</strong> (W_l / 613 Fleet VINs) &bull; Perfect Equity Target: 9.09% each';
+      }
+
+      container.innerHTML = drivers.map((d, idx) => {
+        const totalVins = d.total_cycle_vins || 52;
+        const dutyHours = d.shift_duty_hours || 4.0;
+        
+        let pct = 0;
+        let displayPct = '';
+        let barColor = 'from-emerald-600 to-teal-400';
+        let barHover = 'hover:from-emerald-400 hover:to-teal-300';
+
+        if (currentChartMetricMode === 'VIN') {
+          pct = Math.round((totalVins / 60.0) * 100);
+          displayPct = `${pct}%`;
+          barColor = 'from-emerald-600 to-teal-400';
+        } else if (currentChartMetricMode === 'DUTY') {
+          pct = Math.round((dutyHours / 11.0) * 100);
+          displayPct = `${pct}%`;
+          barColor = 'from-sky-600 to-indigo-500';
+          barHover = 'hover:from-sky-400 hover:to-indigo-400';
+        } else {
+          pct = Math.min(100, Math.round(((totalVins / 613.0) * 100) * 9.5));
+          displayPct = `${((totalVins / 613.0) * 100).toFixed(1)}%`;
+          barColor = 'from-indigo-600 to-purple-500';
+          barHover = 'hover:from-indigo-400 hover:to-purple-400';
+        }
+
+        const barHeight = Math.min(100, Math.max(12, pct));
+        const shortName = d.name.split(' ')[0] + ' ' + (d.name.split(' ')[1] ? d.name.split(' ')[1][0] + '.' : '');
+
+        return `
+          <div class="group flex flex-col items-center h-full justify-end relative cursor-pointer"
+               onmouseenter="inspectDriverBar('${d.driver_id}')"
+               onmouseleave="resetDriverInspector()"
+               data-driver-id="${d.driver_id}">
+            
+            <!-- Floating Hover Tooltip (Appears above the bar) -->
+            <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none absolute bottom-full mb-3 z-30 w-44 bg-slate-900 border border-emerald-500/80 rounded-xl p-2.5 shadow-2xl text-[11px] text-slate-200">
+              <div class="font-bold text-white text-xs flex items-center justify-between border-b border-slate-800 pb-1 mb-1">
+                <span>${d.name.split(' (')[0]}</span>
+                <span class="text-emerald-400 font-mono text-[10px]">${d.driver_id}</span>
+              </div>
+              <div class="space-y-1 font-mono text-[10px]">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Utilization:</span>
+                  <span class="font-bold text-emerald-400">${displayPct}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Total VINs:</span>
+                  <span class="font-bold text-white">${totalVins} cars</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Shift Duty:</span>
+                  <span class="font-bold text-sky-400">${Number(dutyHours).toFixed(1)}h / 11h</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Home Base:</span>
+                  <span class="text-slate-300">${d.home_vdc || 'HUB'}</span>
+                </div>
+              </div>
+              <div class="mt-1.5 pt-1 border-t border-slate-800/80 text-[9px] text-emerald-300 flex items-center gap-1 font-sans">
+                <i class="fa-solid fa-circle-check text-[9px]"></i> Option 1 Balanced
+              </div>
+              <!-- Tooltip Arrow -->
+              <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-emerald-500/80"></div>
+            </div>
+
+            <!-- Percentage Badge Above Bar -->
+            <div class="text-[10px] font-mono font-bold text-slate-300 group-hover:text-emerald-300 transition mb-1">
+              ${displayPct}
+            </div>
+
+            <!-- The Bar Column -->
+            <div class="w-full max-w-[34px] rounded-t-lg bg-gradient-to-t ${barColor} ${barHover} transition-all duration-200 group-hover:shadow-lg group-hover:shadow-emerald-500/30 group-hover:scale-105 border-t border-x border-white/20 relative"
+                 style="height: ${barHeight}%;">
+              <!-- Inner Shimmer Highlight -->
+              <div class="absolute inset-x-0 top-0 h-1.5 bg-white/30 rounded-t-lg"></div>
+            </div>
+
+            <!-- Driver Label Below Bar -->
+            <div class="mt-2 text-center">
+              <div class="text-[10px] font-mono font-bold text-slate-300 group-hover:text-white transition">
+                ${d.driver_id.replace('DRV_', 'D')}
+              </div>
+              <div class="text-[9px] text-slate-500 group-hover:text-slate-300 transition truncate max-w-[42px]" title="${d.name}">
+                ${shortName}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      resetDriverInspector();
+    }
+
+    function inspectDriverBar(driverId) {
+      currentHoveredDriverId = driverId;
+      const drivers = (cachedVinEquityData && cachedVinEquityData.drivers) 
+        ? cachedVinEquityData.drivers 
+        : ((window.EMBEDDED_DATA && window.EMBEDDED_DATA.fleet_vin_equity) ? window.EMBEDDED_DATA.fleet_vin_equity.drivers : []);
+      
+      const driver = drivers.find(d => d.driver_id === driverId);
+      if (!driver) return;
+
+      const totalVins = driver.total_cycle_vins || 52;
+      const dutyHours = driver.shift_duty_hours || 4.0;
+      const earnings = driver.piece_rate_earnings ? Number(driver.piece_rate_earnings).toLocaleString() : (totalVins * 45).toLocaleString();
+      const vinPct = ((totalVins / 60.0) * 100).toFixed(1);
+      const dutyPct = ((dutyHours / 11.0) * 100).toFixed(1);
+
+      const avatar = document.getElementById('inspectorAvatar');
+      if (avatar) avatar.innerText = driver.driver_id.replace('DRV_', '');
+
+      const nameEl = document.getElementById('inspectorDriverName');
+      if (nameEl) nameEl.innerText = driver.name;
+
+      const badgeEl = document.getElementById('inspectorDriverBadge');
+      if (badgeEl) {
+        badgeEl.classList.remove('hidden');
+        badgeEl.innerText = `${driver.home_vdc || 'HUB'} Hub • ${driver.loads_assigned_count || 1} Load(s)`;
+      }
+
+      const subEl = document.getElementById('inspectorDriverSub');
+      if (subEl) subEl.innerText = `${driver.driver_id} • Assigned Loads: ${(driver.assigned_load_nums || []).join(', ') || 'N/A'}`;
+
+      const pctEl = document.getElementById('inspectorUtilizationPct');
+      if (pctEl) {
+        if (currentChartMetricMode === 'VIN') {
+          pctEl.innerText = `${vinPct}% (VIN Cap)`;
+        } else if (currentChartMetricMode === 'DUTY') {
+          pctEl.innerText = `${dutyPct}% (Duty)`;
+        } else {
+          pctEl.innerText = `${((totalVins / 613.0) * 100).toFixed(1)}% (Share)`;
+        }
+      }
+
+      const vinsEl = document.getElementById('inspectorDeliveredVins');
+      if (vinsEl) vinsEl.innerText = `${totalVins} VINs (${driver.prior_vins} Prior + ${driver.shift_vins_delivered} Shift)`;
+
+      const dutyEl = document.getElementById('inspectorShiftDuty');
+      if (dutyEl) dutyEl.innerText = `${Number(dutyHours).toFixed(1)}h / 11.0h limit`;
+
+      const earnEl = document.getElementById('inspectorEarnings');
+      if (earnEl) earnEl.innerText = `$${earnings}`;
+
+      // Highlight table row if visible
+      document.querySelectorAll('#vinEquityTableBody tr').forEach(row => {
+        if (row.innerHTML.includes(driverId)) {
+          row.classList.add('bg-emerald-950/40', 'ring-1', 'ring-emerald-500/40');
+        } else {
+          row.classList.remove('bg-emerald-950/40', 'ring-1', 'ring-emerald-500/40');
+        }
+      });
+    }
+
+    function resetDriverInspector() {
+      currentHoveredDriverId = null;
+      const avatar = document.getElementById('inspectorAvatar');
+      if (avatar) avatar.innerText = 'AVG';
+
+      const nameEl = document.getElementById('inspectorDriverName');
+      if (nameEl) nameEl.innerText = 'Fleet Utilization Baseline (11 Commercial Drivers)';
+
+      const badgeEl = document.getElementById('inspectorDriverBadge');
+      if (badgeEl) {
+        badgeEl.classList.remove('hidden');
+        badgeEl.innerText = 'Option 1: min(W_max - W_min)';
+      }
+
+      const subEl = document.getElementById('inspectorDriverSub');
+      if (subEl) subEl.innerText = 'Hover over any individual driver bar below to inspect detailed driver utilization % and assigned loads';
+
+      const pctEl = document.getElementById('inspectorUtilizationPct');
+      if (pctEl) {
+        if (currentChartMetricMode === 'VIN') {
+          pctEl.innerText = '92.9% Mean';
+        } else if (currentChartMetricMode === 'DUTY') {
+          pctEl.innerText = '61.2% Mean';
+        } else {
+          pctEl.innerText = '9.1% Target';
+        }
+      }
+
+      const vinsEl = document.getElementById('inspectorDeliveredVins');
+      if (vinsEl) vinsEl.innerText = '55.7 VINs / Driver (Avg)';
+
+      const dutyEl = document.getElementById('inspectorShiftDuty');
+      if (dutyEl) dutyEl.innerText = '6.7h Mean Shift Duty';
+
+      const earnEl = document.getElementById('inspectorEarnings');
+      if (earnEl) earnEl.innerText = '$2,508 Avg';
+
+      // Remove table row highlights
+      document.querySelectorAll('#vinEquityTableBody tr').forEach(row => {
+        row.classList.remove('bg-emerald-950/40', 'ring-1', 'ring-emerald-500/40');
+      });
     }
 
     async function runVinEquityOptimization() {
